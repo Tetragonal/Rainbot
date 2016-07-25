@@ -1,6 +1,7 @@
 # Custom stuff
 *.properties
 *.jar
+*.log
 
 # Windows image file caches
 Thumbs.db
