@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
+import java.util.prefs.Preferences;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -49,6 +50,10 @@ public class Window extends JFrame {
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
+		
+		RainbotPreferences rainbotPreferences = new RainbotPreferences();
+		rainbotPreferences.setPreference();
+		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -264,6 +269,7 @@ public class Window extends JFrame {
 		contentPane.add(requireMentionCheckBox);
 		
 		JCheckBox chckbxSavePreferences = new JCheckBox("Save Preferences");
+		chckbxSavePreferences.setSelected(true);
 		chckbxSavePreferences.setBounds(252, 673, 129, 23);
 		contentPane.add(chckbxSavePreferences);
 	}
