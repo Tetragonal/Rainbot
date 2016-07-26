@@ -10,13 +10,25 @@ import de.btobastian.javacord.DiscordAPI;
 import de.btobastian.javacord.entities.User;
 import de.btobastian.javacord.entities.message.Message;
 import de.btobastian.javacord.listener.message.MessageCreateListener;
+import discordbot.Window;
 
 @SuppressWarnings("restriction")
 public class CreateListener implements MessageCreateListener{
+	private Window parentWindow;
+	public CreateListener(Window parentWindow){
+		this.parentWindow = parentWindow;
+	}
 	public boolean isActive = false;
 	public boolean jsEnabled = false;
 	public boolean requireMention = true;
+	
     public void onMessageCreate(DiscordAPI api, Message message) {
+    	
+    	if(message.getChannelReceiver().equals(parentWindow.getCurrentChannel())){
+    		parentWindow.addToConsoleLog("[" + message.getAuthor().getName() + "#" + message.getAuthor().getDiscriminator() + "] " + message.getContent());
+    	}   	
+    	
+    	
     	if(!message.getAuthor().isBot() && isActive){
     		if(!(requireMention) || message.getMentions().contains(api.getYourself()) && message.getMentions().size() == 1){
     			String s = "";

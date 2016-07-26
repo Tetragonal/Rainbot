@@ -1,9 +1,10 @@
 package discordbot;
 
-public class Shutdown extends Thread{
+public class RainbotShutdown extends Thread{
 	private Rainbot rainbot;
+	private Window window;
 	
-	public Shutdown(Rainbot rainbot){
+	public RainbotShutdown(Rainbot rainbot){
 		this.rainbot = rainbot;
 	}
 	

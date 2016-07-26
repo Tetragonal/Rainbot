@@ -2,12 +2,13 @@ package discordbot;
 
 import java.awt.Color;
 import java.awt.EventQueue;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.prefs.Preferences;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -24,6 +25,7 @@ import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.DefaultCaret;
 
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.Server;
@@ -39,26 +41,36 @@ public class Window extends JFrame {
 	private JTextField tokenField;
 	private JPasswordField passwordField;
 	private Rainbot rainbot = new Rainbot(this);
+	private static RainbotProperties rainbotProperties = new RainbotProperties();
 	
 	private JProgressBar connectedBar;
 	private JLabel lblUser;
 	private JComboBox<Channel> textChannelComboBox;
 	private JComboBox<Server> serverComboBox;
 	private JToggleButton btnConnect;
+	private JCheckBox checkBoxSaveProperties;
+	private JCheckBox createListenerCheckBox;
+	private JCheckBox editListenerCheckBox;
+	private JCheckBox deleteListenerCheckBox;
+	private JCheckBox requireMentionCheckBox;
+	private JCheckBox jsCheckBox;
+	private JTextArea consoleTextArea;
+	
+	private boolean loadFlag = false;
 
 	/**
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
-		
-		RainbotPreferences rainbotPreferences = new RainbotPreferences();
-		rainbotPreferences.setPreference();
-		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
 					Window frame = new Window();
 					frame.setVisible(true);
+					if(rainbotProperties.getProperty("saveProperties") != null && rainbotProperties.getProperty("saveProperties").equals("true")){
+						frame.getProperties();
+					}
+					
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -74,6 +86,8 @@ public class Window extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 1024, 768);
 		
+		Runtime.getRuntime().addShutdownHook(new WindowShutdown(this));
+		
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		contentPane = new JPanel();
@@ -81,10 +95,17 @@ public class Window extends JFrame {
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
-		JTextArea consoleTextArea = new JTextArea();
+		
+		
+		consoleTextArea = new JTextArea();
+		consoleTextArea.setMargin(new Insets(-10,10,10,10));
 		consoleTextArea.setEditable(false);
-		consoleTextArea.setBounds(41, 36, 756, 519);
-		contentPane.add(consoleTextArea);
+		JScrollPane consoleScrollPane = new JScrollPane(consoleTextArea);	
+		consoleScrollPane.setBounds(41, 36, 756, 519);
+		consoleScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		consoleScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        contentPane.add(consoleScrollPane);
+
 		
 		usernameField = new JTextField();
 		usernameField.setBounds(41, 589, 191, 20);
@@ -112,7 +133,7 @@ public class Window extends JFrame {
 		lblToken.setBounds(41, 659, 46, 14);
 		contentPane.add(lblToken);
 		
-		JCheckBox createListenerCheckBox = new JCheckBox("Enable commands");
+		createListenerCheckBox = new JCheckBox("Enable commands");
 		createListenerCheckBox.setBounds(817, 66, 181, 23);
 		createListenerCheckBox.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
@@ -129,7 +150,7 @@ public class Window extends JFrame {
 		lblOptions.setBounds(884, 45, 46, 14);
 		contentPane.add(lblOptions);
 		
-		JCheckBox deleteListenerCheckBox = new JCheckBox("Notify on delete");
+		deleteListenerCheckBox = new JCheckBox("Notify on delete");
 		deleteListenerCheckBox.setBounds(817, 168, 181, 23);
 		deleteListenerCheckBox.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
@@ -142,7 +163,7 @@ public class Window extends JFrame {
 		});
 		contentPane.add(deleteListenerCheckBox);
 		
-		JCheckBox jsCheckBox = new JCheckBox("Enable Javascript parser");
+		jsCheckBox = new JCheckBox("Enable Javascript parser");
 		jsCheckBox.setBounds(837, 92, 181, 23);
 		jsCheckBox.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
@@ -155,7 +176,7 @@ public class Window extends JFrame {
 		});
 		contentPane.add(jsCheckBox);
 		
-		JCheckBox editListenerCheckBox = new JCheckBox("Notify on edit");
+		editListenerCheckBox = new JCheckBox("Notify on edit");
 		editListenerCheckBox.setBounds(817, 142, 181, 23);
 		editListenerCheckBox.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
@@ -195,6 +216,7 @@ public class Window extends JFrame {
 		serverComboBox.addItemListener(new ItemListener () {
 		    public void itemStateChanged(ItemEvent event) {
 		       if (event.getStateChange() == ItemEvent.SELECTED) {
+		  		  addToConsoleLog("Joined server " + getCurrentServer());
 		          updateChannelComboBox(getCurrentServer());
 		       }
 		    } 
@@ -205,16 +227,14 @@ public class Window extends JFrame {
 		lblSendMessage.setBounds(451, 566, 117, 20);
 		contentPane.add(lblSendMessage);
 		
-		final JTextArea sendTextArea = new JTextArea();
-//		sendTextArea.setBounds(451, 589, 366, 84);
-//		contentPane.add(sendTextArea);
-		
-		JScrollPane scroll = new JScrollPane (sendTextArea);
-		
-		scroll.setBounds(451, 589, 366, 84);
-	    scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        contentPane.add(scroll);
+		final JTextArea sendTextArea = new JTextArea();		
+        DefaultCaret caret = (DefaultCaret)sendTextArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		JScrollPane sendTextScrollPane = new JScrollPane (sendTextArea);	
+		sendTextScrollPane.setBounds(451, 589, 366, 84);
+	    sendTextScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        sendTextScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        contentPane.add(sendTextScrollPane);
 		
 		
 		JButton btnSend = new JButton("Send");
@@ -222,7 +242,7 @@ public class Window extends JFrame {
 		btnSend.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
 		    	if(getCurrentChannel() != null){
-	    			getCurrentChannel().sendMessage(sendTextArea.getText());
+	    			getCurrentChannel().sendMessage(sendTextArea.getText()); //callback
 	            	sendTextArea.setText(null);
 		    	}
 		    }
@@ -239,6 +259,13 @@ public class Window extends JFrame {
 		
         textChannelComboBox = new JComboBox<Channel>();
 		textChannelComboBox.setBounds(807, 468, 191, 20);
+		textChannelComboBox.addItemListener(new ItemListener () {			
+		    public void itemStateChanged(ItemEvent event) {
+		       if (event.getStateChange() == ItemEvent.SELECTED && loadFlag == false) {
+		    	   addToConsoleLog("Joined channel: " + getCurrentChannel());
+		       }
+		    } 
+		});
 		contentPane.add(textChannelComboBox);
 		
 		JLabel lblSelectTextChannel = new JLabel("Select Text Channel");
@@ -248,13 +275,14 @@ public class Window extends JFrame {
 		JButton btnUpdateLists = new JButton("Refresh");
 		btnUpdateLists.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				addToConsoleLog("Server list refreshed.");
 				updateServerComboBox();
 			}
 		});
 		btnUpdateLists.setBounds(860, 517, 89, 23);
 		contentPane.add(btnUpdateLists);
 		
-		JCheckBox requireMentionCheckBox = new JCheckBox("Require mention");
+		requireMentionCheckBox = new JCheckBox("Require mention");
 		requireMentionCheckBox.setSelected(true);
 		requireMentionCheckBox.setBounds(837, 116, 181, 23);
 		requireMentionCheckBox.addItemListener(new ItemListener() {
@@ -268,10 +296,18 @@ public class Window extends JFrame {
 		});
 		contentPane.add(requireMentionCheckBox);
 		
-		JCheckBox chckbxSavePreferences = new JCheckBox("Save Preferences");
-		chckbxSavePreferences.setSelected(true);
-		chckbxSavePreferences.setBounds(252, 673, 129, 23);
-		contentPane.add(chckbxSavePreferences);
+		checkBoxSaveProperties = new JCheckBox("Save Preferences");
+		checkBoxSaveProperties.setBounds(252, 673, 129, 23);
+		checkBoxSaveProperties.addItemListener(new ItemListener() {
+		    public void itemStateChanged(ItemEvent e) {
+		        if(e.getStateChange() == ItemEvent.SELECTED) {//checkbox has been selected
+		            setProperties();
+		        } else {//checkbox has been deselected
+		            clearProperties();
+		        };
+		    }
+		});
+		contentPane.add(checkBoxSaveProperties);
 	}
 	
 	public void setProgressBar(int percent) {
@@ -284,18 +320,11 @@ public class Window extends JFrame {
 	
 	public void updateServerComboBox(){
 		//clear list
-		while(serverComboBox.getItemCount() > 0){
-			serverComboBox.removeItemAt(0);
-		}
+		serverComboBox.removeAllItems();
 		//populate list
 		if(rainbot.getImplDiscordAPI() != null){
 	    	for(Server s : rainbot.getImplDiscordAPI().getServers()){
-	    		serverComboBox.addItem(s);;
-	    	}
-	    	if(serverComboBox.getItemCount() > 0){
-	    		updateChannelComboBox(getCurrentServer());
-	    	}else{
-	    		updateChannelComboBox(null);
+	    		serverComboBox.addItem(s);
 	    	}
 		}else{
     		updateChannelComboBox(null);
@@ -303,16 +332,18 @@ public class Window extends JFrame {
 	}
 	
 	public void updateChannelComboBox(Server s){
+		loadFlag = true; //don't output system logs while updating
 		//clear list
-		while(textChannelComboBox.getItemCount() > 0){
-			textChannelComboBox.removeItemAt(0);
-		}
+		textChannelComboBox.removeAllItems();
 		//populate list
 		if(s != null){
 			for(Channel c : s.getChannels()){
 				textChannelComboBox.addItem(c);
 			}
+			addToConsoleLog("Joined channel: " + getCurrentChannel());
 		}
+		loadFlag = false;
+		
 	}
 	
 	public Server getCurrentServer(){
@@ -342,4 +373,74 @@ public class Window extends JFrame {
 	public void setBtnConnectToggle(boolean toggle){
 		btnConnect.setSelected(toggle);
 	}
+	
+	public void getProperties(){
+		usernameField.setText(rainbotProperties.getProperty("Email"));
+		passwordField.setText(rainbotProperties.getProperty("Pw"));
+		tokenField.setText(rainbotProperties.getProperty("Token"));
+		
+		createListenerCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Enable Commands")));
+		jsCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Enable Javascript parser")));
+		requireMentionCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Require mention")));
+		editListenerCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Notify on edit")));
+		deleteListenerCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Notify on delete")));
+		
+		
+		
+		checkBoxSaveProperties.setSelected(Boolean.valueOf(rainbotProperties.getProperty("saveProperties")));
+	}
+	
+	public void setProperties(){
+		rainbotProperties.setProperty("saveProperties", "true");
+		
+		rainbotProperties.setProperty("Email", usernameField.getText());
+		rainbotProperties.setProperty("Pw", passwordField.getPassword().toString());
+		rainbotProperties.setProperty("Token", tokenField.getText());
+		
+		rainbotProperties.setProperty("Enable Commands", Boolean.toString(createListenerCheckBox.isSelected()));
+		rainbotProperties.setProperty("Enable Javascript parser", Boolean.toString(jsCheckBox.isSelected()));
+		rainbotProperties.setProperty("Require mention", Boolean.toString(requireMentionCheckBox.isSelected()));
+		rainbotProperties.setProperty("Notify on edit", Boolean.toString(editListenerCheckBox.isSelected()));
+		rainbotProperties.setProperty("Notify on delete", Boolean.toString(deleteListenerCheckBox.isSelected()));
+	}
+	
+	public void clearProperties(){
+		rainbotProperties.setProperty("saveProperties", "false");
+		
+		rainbotProperties.clearProperty("Email");
+		rainbotProperties.clearProperty("Pw");
+		rainbotProperties.clearProperty("Token");
+		
+		rainbotProperties.clearProperty("Enable Commands");
+		rainbotProperties.clearProperty("Enable Javascript parser");
+		rainbotProperties.clearProperty("Require mention");
+		rainbotProperties.clearProperty("Notify on edit");
+		rainbotProperties.clearProperty("Notify on delete");
+	}
+	
+	public void addToConsoleLog(String text){
+		consoleTextArea.setText(consoleTextArea.getText() + "\n" + text);
+		try {
+			saveToFile(text);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void saveToFile(String text) throws Exception {
+	   FileOutputStream out = new FileOutputStream("console.log", true);
+	   text = text + "\n";
+	   out.write(text.getBytes());
+	   out.close();
+} 
+	
+	
+//	public void saveToFile(JTextArea textArea) throws Exception {
+//		   FileOutputStream out = new FileOutputStream("console.log", true);
+//		   out.write(textArea.getText().getBytes());
+//		   out.close();
+//	} 
+	
+	
 }
