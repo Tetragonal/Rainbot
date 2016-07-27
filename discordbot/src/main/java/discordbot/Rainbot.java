@@ -21,12 +21,15 @@ public class Rainbot {
 	public CreateListener createListener;
 	public EditListener editListener;
 	public DeleteListener deleteListener;
+	public MessageProcessor messageProcessor;
 	
 	private boolean isConnected = false;
 	
 	public Rainbot(Window parentWindow){
 		this.parentWindow = parentWindow;
-		createListener = new CreateListener(parentWindow);
+		messageProcessor = new MessageProcessor(this);
+		messageProcessor.start();
+		createListener = new CreateListener(parentWindow, messageProcessor);
 		editListener = new EditListener();
 		deleteListener = new DeleteListener();
 		Runtime.getRuntime().addShutdownHook(new RainbotShutdown(thisRainbot));
@@ -51,7 +54,6 @@ public class Rainbot {
 					}
 	            	isConnected = true;
 	            	api.setGame("nekopara");
-	            	api.setIdle(false);
 	            	parentWindow.setProgressBar(100);
 	            	parentWindow.setLblUser("Logged in as bot user: " + api.getYourself().getName() + "#" + api.getYourself().getDiscriminator());
 	            	parentWindow.updateServerComboBox();
@@ -74,7 +76,6 @@ public class Rainbot {
 		if(isConnected){
         	isConnected = false;
 			implApi.setGame(null);
-			implApi.setIdle(true);
 			implApi.getSocketAdapter().getWebSocket().disconnect(1000);
 			parentWindow.setProgressBar(0);
         	parentWindow.setLblUser("Not logged in");

@@ -1,20 +1,30 @@
 package discordbot;
 
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.EventQueue;
+import java.awt.FocusTraversalPolicy;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Vector;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
@@ -23,18 +33,15 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
-import javax.swing.UIManager;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.DefaultCaret;
 
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.Server;
+import de.btobastian.javacord.entities.User;
 
 public class Window extends JFrame {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 	private JTextField usernameField;
@@ -45,18 +52,24 @@ public class Window extends JFrame {
 	
 	private JProgressBar connectedBar;
 	private JLabel lblUser;
-	private JComboBox<Channel> textChannelComboBox;
-	private JComboBox<Server> serverComboBox;
+	private JComboBox<String> textChannelComboBox;
+	private JComboBox<String> serverComboBox;
 	private JToggleButton btnConnect;
 	private JCheckBox checkBoxSaveProperties;
-	private JCheckBox createListenerCheckBox;
+	private JCheckBox messageProcessorCheckBox;
 	private JCheckBox editListenerCheckBox;
 	private JCheckBox deleteListenerCheckBox;
 	private JCheckBox requireMentionCheckBox;
 	private JCheckBox jsCheckBox;
 	private JTextArea consoleTextArea;
+	private JTextArea sendTextArea;
+	private JCheckBox sendAsCommandCheckBox;
+	private DefaultListModel userListModel;
 	
 	private boolean loadFlag = false;
+	
+    static WindowTraversalPolicy newPolicy;
+	
 
 	/**
 	 * Launch the application.
@@ -98,7 +111,7 @@ public class Window extends JFrame {
 		
 		
 		consoleTextArea = new JTextArea();
-		consoleTextArea.setMargin(new Insets(-10,10,10,10));
+		consoleTextArea.setMargin(new Insets(-10,10,0,10));
 		consoleTextArea.setEditable(false);
 		JScrollPane consoleScrollPane = new JScrollPane(consoleTextArea);	
 		consoleScrollPane.setBounds(41, 36, 756, 519);
@@ -133,18 +146,24 @@ public class Window extends JFrame {
 		lblToken.setBounds(41, 659, 46, 14);
 		contentPane.add(lblToken);
 		
-		createListenerCheckBox = new JCheckBox("Enable commands");
-		createListenerCheckBox.setBounds(817, 66, 181, 23);
-		createListenerCheckBox.addItemListener(new ItemListener() {
+		messageProcessorCheckBox = new JCheckBox("Enable commands");
+		messageProcessorCheckBox.setBounds(817, 66, 181, 23);
+		messageProcessorCheckBox.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
 		        if(e.getStateChange() == ItemEvent.SELECTED) {//checkbox has been selected
-		            rainbot.createListener.isActive = true;
+		            rainbot.createListener.messageProcessor.isActive = true;
+		            if(rainbot.getImplDiscordAPI()!= null){
+		            	rainbot.getImplDiscordAPI().setIdle(false);
+		            }
 		        } else {//checkbox has been deselected
-		            rainbot.createListener.isActive = false;
+		            rainbot.createListener.messageProcessor.isActive = false;
+		            if(rainbot.getImplDiscordAPI()!= null){
+		            	rainbot.getImplDiscordAPI().setIdle(true);
+		            }
 		        };
 		    }
 		});
-		contentPane.add(createListenerCheckBox);
+		contentPane.add(messageProcessorCheckBox);
 		
 		JLabel lblOptions = new JLabel("Options");
 		lblOptions.setBounds(884, 45, 46, 14);
@@ -168,9 +187,9 @@ public class Window extends JFrame {
 		jsCheckBox.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
 		        if(e.getStateChange() == ItemEvent.SELECTED) {//checkbox has been selected
-		            rainbot.createListener.jsEnabled = true;
+		            rainbot.createListener.messageProcessor.jsEnabled = true;
 		        } else {//checkbox has been deselected
-		            rainbot.createListener.jsEnabled = false;
+		            rainbot.createListener.messageProcessor.jsEnabled = false;
 		        };
 		    }
 		});
@@ -189,8 +208,6 @@ public class Window extends JFrame {
 		});
 		contentPane.add(editListenerCheckBox);
 		
-		
-		UIManager.put("ProgressBar.selectionBackground",Color.WHITE);
 		connectedBar = new JProgressBar();
 		connectedBar.setBounds(262, 613, 100, 14);
 		connectedBar.setForeground(Color.green);
@@ -211,13 +228,14 @@ public class Window extends JFrame {
 		contentPane.add(btnConnect);
 				
 		
-        serverComboBox = new JComboBox<Server>();
-		serverComboBox.setBounds(807, 420, 191, 20);
+        serverComboBox = new JComboBox<String>();
+		serverComboBox.setBounds(807, 362, 191, 20);
 		serverComboBox.addItemListener(new ItemListener () {
 		    public void itemStateChanged(ItemEvent event) {
 		       if (event.getStateChange() == ItemEvent.SELECTED) {
 		  		  addToConsoleLog("Joined server " + getCurrentServer());
-		          updateChannelComboBox(getCurrentServer());
+			      updateChannelComboBox(getCurrentServer());
+			      updateUserList(getCurrentServer());
 		       }
 		    } 
 		});
@@ -227,10 +245,27 @@ public class Window extends JFrame {
 		lblSendMessage.setBounds(451, 566, 117, 20);
 		contentPane.add(lblSendMessage);
 		
-		final JTextArea sendTextArea = new JTextArea();		
-        DefaultCaret caret = (DefaultCaret)sendTextArea.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-		JScrollPane sendTextScrollPane = new JScrollPane (sendTextArea);	
+		
+		sendTextArea = new JTextArea();		
+		sendTextArea.setMargin(new Insets(2,5,5,5));
+		sendTextArea.addKeyListener(new KeyListener(){
+		    public void keyPressed(KeyEvent e) {
+		        if (e.getKeyCode() == KeyEvent.VK_ENTER && !e.isShiftDown()) {
+		        	sendMessage();
+		        	sendTextArea.setText(null);
+		        }
+		        else if (e.getKeyCode() == KeyEvent.VK_ENTER && e.isShiftDown()) {
+		        	sendTextArea.setText(sendTextArea.getText()+ "\n");
+		        }
+		    }
+			public void keyReleased(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ENTER && sendTextArea.getText().equals("\n")) {
+		        	sendTextArea.setText(null);
+		        }
+			}
+			public void keyTyped(KeyEvent arg0) {}
+		});
+		JScrollPane sendTextScrollPane = new JScrollPane (sendTextArea);
 		sendTextScrollPane.setBounds(451, 589, 366, 84);
 	    sendTextScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         sendTextScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -241,10 +276,8 @@ public class Window extends JFrame {
 		btnSend.setBounds(728, 673, 89, 23);
 		btnSend.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
-		    	if(getCurrentChannel() != null){
-	    			getCurrentChannel().sendMessage(sendTextArea.getText()); //callback
-	            	sendTextArea.setText(null);
-		    	}
+		    	sendMessage();
+	            sendTextArea.requestFocusInWindow();
 		    }
 		});
 		contentPane.add(btnSend);
@@ -254,11 +287,11 @@ public class Window extends JFrame {
 		contentPane.add(lblUser);
 		
 		JLabel lblSelectServer = new JLabel("Select Server");
-		lblSelectServer.setBounds(807, 397, 191, 14);
+		lblSelectServer.setBounds(807, 345, 191, 14);
 		contentPane.add(lblSelectServer);
 		
-        textChannelComboBox = new JComboBox<Channel>();
-		textChannelComboBox.setBounds(807, 468, 191, 20);
+        textChannelComboBox = new JComboBox<String>();
+		textChannelComboBox.setBounds(807, 410, 191, 20);
 		textChannelComboBox.addItemListener(new ItemListener () {			
 		    public void itemStateChanged(ItemEvent event) {
 		       if (event.getStateChange() == ItemEvent.SELECTED && loadFlag == false) {
@@ -269,7 +302,7 @@ public class Window extends JFrame {
 		contentPane.add(textChannelComboBox);
 		
 		JLabel lblSelectTextChannel = new JLabel("Select Text Channel");
-		lblSelectTextChannel.setBounds(807, 451, 191, 14);
+		lblSelectTextChannel.setBounds(807, 393, 191, 14);
 		contentPane.add(lblSelectTextChannel);
 		
 		JButton btnUpdateLists = new JButton("Refresh");
@@ -279,7 +312,7 @@ public class Window extends JFrame {
 				updateServerComboBox();
 			}
 		});
-		btnUpdateLists.setBounds(860, 517, 89, 23);
+		btnUpdateLists.setBounds(909, 571, 89, 23);
 		contentPane.add(btnUpdateLists);
 		
 		requireMentionCheckBox = new JCheckBox("Require mention");
@@ -288,9 +321,9 @@ public class Window extends JFrame {
 		requireMentionCheckBox.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
 		        if(e.getStateChange() == ItemEvent.SELECTED) {//checkbox has been selected
-		            rainbot.createListener.requireMention = true;
+		            rainbot.createListener.messageProcessor.requireMention = true;
 		        } else {//checkbox has been deselected
-		            rainbot.createListener.requireMention = false;
+		            rainbot.createListener.messageProcessor.requireMention = false;
 		        };
 		    }
 		});
@@ -308,6 +341,45 @@ public class Window extends JFrame {
 		    }
 		});
 		contentPane.add(checkBoxSaveProperties);
+		
+		sendAsCommandCheckBox = new JCheckBox("Send as command");
+		sendAsCommandCheckBox.setBounds(451, 673, 149, 23);
+		contentPane.add(sendAsCommandCheckBox);
+		
+		JLabel lblUserList = new JLabel("User List");
+		lblUserList.setBounds(807, 442, 78, 14);
+		contentPane.add(lblUserList);
+		
+		userListModel = new DefaultListModel();
+		JList userList = new JList(userListModel);
+		userList.addMouseListener( new MouseAdapter()
+		{
+		    public void mousePressed(MouseEvent e)
+		    {
+		        if ( SwingUtilities.isRightMouseButton(e) )
+		        {
+		            JList list = (JList)e.getSource();
+		            int row = list.locationToIndex(e.getPoint());
+		            list.setSelectedIndex(row);
+		            
+		            sendTextArea.setText(sendTextArea.getText() + ((User) getCurrentServer().getMembers().toArray()[row]).getMentionTag());
+		            sendTextArea.requestFocusInWindow();
+		        }
+		    }
+
+		});
+		JScrollPane scrollPane = new JScrollPane(userList);
+		scrollPane.setBounds(807, 459, 191, 96);
+		contentPane.add(scrollPane);
+		
+		Vector<Component> order = new Vector<Component>(7);
+	    order.add(usernameField);
+	    order.add(passwordField);
+	    order.add(tokenField);
+	    newPolicy = new WindowTraversalPolicy(order);
+	    setFocusTraversalPolicy(newPolicy);
+		
+		
 	}
 	
 	public void setProgressBar(int percent) {
@@ -324,26 +396,42 @@ public class Window extends JFrame {
 		//populate list
 		if(rainbot.getImplDiscordAPI() != null){
 	    	for(Server s : rainbot.getImplDiscordAPI().getServers()){
-	    		serverComboBox.addItem(s);
+	    		serverComboBox.addItem(s.getName());
 	    	}
 		}else{
     		updateChannelComboBox(null);
+    		updateUserList(null);
     	}
 	}
 	
 	public void updateChannelComboBox(Server s){
-		loadFlag = true; //don't output system logs while updating
+		loadFlag = true; //don't output system log while adding channels
 		//clear list
 		textChannelComboBox.removeAllItems();
 		//populate list
 		if(s != null){
 			for(Channel c : s.getChannels()){
-				textChannelComboBox.addItem(c);
+				textChannelComboBox.addItem(c.getName());
 			}
 			addToConsoleLog("Joined channel: " + getCurrentChannel());
 		}
 		loadFlag = false;
 		
+	}
+	
+	public void updateUserList(Server s){
+		//clear list
+		userListModel.clear();
+		//populate list
+		if(s != null){
+			for(User u : s.getMembers()){
+				String info = u.getName() + "#" + u.getDiscriminator();
+				if(u.isBot()){
+					info = info + " [Bot]";
+				}
+				userListModel.addElement(info);
+			}
+		}
 	}
 	
 	public Server getCurrentServer(){
@@ -379,7 +467,7 @@ public class Window extends JFrame {
 		passwordField.setText(rainbotProperties.getProperty("Pw"));
 		tokenField.setText(rainbotProperties.getProperty("Token"));
 		
-		createListenerCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Enable Commands")));
+		messageProcessorCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Enable Commands")));
 		jsCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Enable Javascript parser")));
 		requireMentionCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Require mention")));
 		editListenerCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Notify on edit")));
@@ -397,7 +485,7 @@ public class Window extends JFrame {
 		rainbotProperties.setProperty("Pw", passwordField.getPassword().toString());
 		rainbotProperties.setProperty("Token", tokenField.getText());
 		
-		rainbotProperties.setProperty("Enable Commands", Boolean.toString(createListenerCheckBox.isSelected()));
+		rainbotProperties.setProperty("Enable Commands", Boolean.toString(messageProcessorCheckBox.isSelected()));
 		rainbotProperties.setProperty("Enable Javascript parser", Boolean.toString(jsCheckBox.isSelected()));
 		rainbotProperties.setProperty("Require mention", Boolean.toString(requireMentionCheckBox.isSelected()));
 		rainbotProperties.setProperty("Notify on edit", Boolean.toString(editListenerCheckBox.isSelected()));
@@ -419,11 +507,15 @@ public class Window extends JFrame {
 	}
 	
 	public void addToConsoleLog(String text){
-		consoleTextArea.setText(consoleTextArea.getText() + "\n" + text);
+		String s = consoleTextArea.getText();
+		while(s.length() > 50000){
+			s = s.substring(s.indexOf("\n", 1));
+		}
+		consoleTextArea.setText(s + "\n" + text);
+		consoleTextArea.setCaretPosition(consoleTextArea.getDocument().getLength());
 		try {
 			saveToFile(text);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -433,14 +525,19 @@ public class Window extends JFrame {
 	   text = text + "\n";
 	   out.write(text.getBytes());
 	   out.close();
-} 
+	} 	
 	
-	
-//	public void saveToFile(JTextArea textArea) throws Exception {
-//		   FileOutputStream out = new FileOutputStream("console.log", true);
-//		   out.write(textArea.getText().getBytes());
-//		   out.close();
-//	} 
-	
-	
+	public void sendMessage(){
+    	if(getCurrentChannel() != null && sendTextArea.getText() != ""){
+    		if(sendAsCommandCheckBox.isSelected()){
+    			String result = rainbot.messageProcessor.parseCommand(getCurrentChannel(), sendTextArea.getText());
+    			if(result != null){
+    				rainbot.messageProcessor.queueMessage(getCurrentChannel(), "`" + sendTextArea.getText() + "`\n\n" + result);
+    			}
+    		}else{
+        		rainbot.messageProcessor.queueMessage(getCurrentChannel(), sendTextArea.getText());
+    		}
+        	sendTextArea.setText(null);
+    	}
+	}	
 }

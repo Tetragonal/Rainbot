@@ -10,18 +10,13 @@ import java.util.Properties;
 
 public class RainbotProperties {
 	Properties prop = new Properties();
-	
-	
 	public String getProperty(String key){
 		String property = null;
 		InputStream input = null;
 		try {
-			
 			input = new FileInputStream("config.properties");
 			prop.load(input);
-			
 			property = prop.getProperty(key);
-			
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
@@ -41,13 +36,10 @@ public class RainbotProperties {
 
 		try {
 			output = new FileOutputStream("config.properties");
-
 			// set the properties value
 			prop.setProperty(key, value);
-
 			// save properties to project root folder
 			prop.store(output, null);
-
 		} catch (IOException io) {
 			io.printStackTrace();
 		} finally {
@@ -66,12 +58,10 @@ public class RainbotProperties {
 		
 		try {
 			output = new FileOutputStream("config.properties");
-
 			//remove property
 			prop.remove(key);
 			// save properties to project root folder
 			prop.store(output, null);
-
 		} catch (IOException io) {
 			io.printStackTrace();
 		} finally {
