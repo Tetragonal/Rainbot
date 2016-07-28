@@ -12,6 +12,8 @@ import de.btobastian.javacord.Javacord;
 import listeners.CreateListener;
 import listeners.DeleteListener;
 import listeners.EditListener;
+import message.MessageProcessor;
+import window.Window;
 
 public class Rainbot {
 	private Rainbot thisRainbot = this;
@@ -23,30 +25,26 @@ public class Rainbot {
 	public DeleteListener deleteListener;
 	public MessageProcessor messageProcessor;
 	
-	private boolean isConnected = false;
+	public boolean isConnected = false;
 	
 	public Rainbot(Window parentWindow){
 		this.parentWindow = parentWindow;
 		messageProcessor = new MessageProcessor(this);
 		messageProcessor.start();
-		createListener = new CreateListener(parentWindow, messageProcessor);
+		createListener = new CreateListener(parentWindow, messageProcessor, this);
 		editListener = new EditListener();
 		deleteListener = new DeleteListener();
 		Runtime.getRuntime().addShutdownHook(new RainbotShutdown(thisRainbot));
 	}
 	
-	public void connect(String email, String password, String token){
+	public void connect(String token){
 		if(!isConnected){
-			implApi = (ImplDiscordAPI) Javacord.getApi(email, password);
-//			api = Javacord.getApi(email, password);
-			implApi.setToken(token, true); // String token, boolean bot
-			
+			implApi = (ImplDiscordAPI) Javacord.getApi(token, true);
 	        implApi.connect(new FutureCallback<DiscordAPI>() {
 	            public void onSuccess(DiscordAPI api) {
 	            	api.registerListener(createListener);
 	            	api.registerListener(editListener);
 	            	api.registerListener(deleteListener);
-	              
 	                try {
 	                	Thread.sleep(1000);
 					} catch (InterruptedException e) {
@@ -56,6 +54,7 @@ public class Rainbot {
 	            	api.setGame("nekopara");
 	            	parentWindow.setProgressBar(100);
 	            	parentWindow.setLblUser("Logged in as bot user: " + api.getYourself().getName() + "#" + api.getYourself().getDiscriminator());
+	            	parentWindow.addToConsoleLog("Logged in as bot user: " + api.getYourself().getName() + "#" + api.getYourself().getDiscriminator());
 	            	parentWindow.updateServerComboBox();
             	}
 	            public void onFailure(Throwable t) {
@@ -70,6 +69,10 @@ public class Rainbot {
 	
 	public ImplDiscordAPI getImplDiscordAPI(){
 		return implApi;
+	}
+	
+	public Window getParentWindow(){
+		return parentWindow;
 	}
 
 	public void disconnect() {

@@ -1,4 +1,4 @@
-package discordbot;
+package window;
 
 import java.awt.Component;
 import java.awt.Container;

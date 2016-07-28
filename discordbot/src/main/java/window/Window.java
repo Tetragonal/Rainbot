@@ -1,4 +1,4 @@
-package discordbot;
+package window;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -39,14 +39,15 @@ import javax.swing.border.EmptyBorder;
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.Server;
 import de.btobastian.javacord.entities.User;
+import de.btobastian.javacord.entities.message.Message;
+import discordbot.Rainbot;
+import discordbot.RainbotProperties;
 
 public class Window extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-	private JTextField usernameField;
 	private JTextField tokenField;
-	private JPasswordField passwordField;
 	private Rainbot rainbot = new Rainbot(this);
 	private static RainbotProperties rainbotProperties = new RainbotProperties();
 	
@@ -55,7 +56,7 @@ public class Window extends JFrame {
 	private JComboBox<String> textChannelComboBox;
 	private JComboBox<String> serverComboBox;
 	private JToggleButton btnConnect;
-	private JCheckBox checkBoxSaveProperties;
+	public JCheckBox checkBoxSaveProperties;
 	private JCheckBox messageProcessorCheckBox;
 	private JCheckBox editListenerCheckBox;
 	private JCheckBox deleteListenerCheckBox;
@@ -64,7 +65,7 @@ public class Window extends JFrame {
 	private JTextArea consoleTextArea;
 	private JTextArea sendTextArea;
 	private JCheckBox sendAsCommandCheckBox;
-	private DefaultListModel userListModel;
+	private DefaultListModel<String> userListModel;
 	
 	private boolean loadFlag = false;
 	
@@ -83,7 +84,6 @@ public class Window extends JFrame {
 					if(rainbotProperties.getProperty("saveProperties") != null && rainbotProperties.getProperty("saveProperties").equals("true")){
 						frame.getProperties();
 					}
-					
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -118,32 +118,14 @@ public class Window extends JFrame {
 		consoleScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		consoleScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         contentPane.add(consoleScrollPane);
-
-		
-		usernameField = new JTextField();
-		usernameField.setBounds(41, 589, 191, 20);
-		contentPane.add(usernameField);
-		usernameField.setColumns(10);
 		
 		tokenField = new JTextField();
-		tokenField.setBounds(41, 674, 191, 20);
+		tokenField.setBounds(41, 582, 191, 20);
 		contentPane.add(tokenField);
 		tokenField.setColumns(10);
 		
-		passwordField = new JPasswordField();
-		passwordField.setBounds(41, 631, 191, 20);
-		contentPane.add(passwordField);
-		
-		JLabel lblUsername = new JLabel("Email");
-		lblUsername.setBounds(41, 575, 60, 14);
-		contentPane.add(lblUsername);
-		
-		JLabel lblPassword = new JLabel("Password");
-		lblPassword.setBounds(41, 613, 60, 14);
-		contentPane.add(lblPassword);
-		
 		JLabel lblToken = new JLabel("Token");
-		lblToken.setBounds(41, 659, 46, 14);
+		lblToken.setBounds(42, 566, 46, 14);
 		contentPane.add(lblToken);
 		
 		messageProcessorCheckBox = new JCheckBox("Enable commands");
@@ -209,17 +191,17 @@ public class Window extends JFrame {
 		contentPane.add(editListenerCheckBox);
 		
 		connectedBar = new JProgressBar();
-		connectedBar.setBounds(262, 613, 100, 14);
+		connectedBar.setBounds(85, 619, 100, 14);
 		connectedBar.setForeground(Color.green);
 		connectedBar.setBackground(Color.red);
 		contentPane.add(connectedBar);
 		
 		btnConnect = new JToggleButton("Connect");
-		btnConnect.setBounds(262, 626, 100, 30);
+		btnConnect.setBounds(85, 633, 100, 30);
 		btnConnect.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent ev) {
 				if(ev.getStateChange()==ItemEvent.SELECTED){
-					rainbot.connect(usernameField.getText(), passwordField.getPassword().toString(), tokenField.getText());
+					rainbot.connect(tokenField.getText());
 				}else if(ev.getStateChange()==ItemEvent.DESELECTED){
 					rainbot.disconnect();
 				}
@@ -242,7 +224,7 @@ public class Window extends JFrame {
 		contentPane.add(serverComboBox);
 		
 		JLabel lblSendMessage = new JLabel("Send message");
-		lblSendMessage.setBounds(451, 566, 117, 20);
+		lblSendMessage.setBounds(270, 566, 117, 20);
 		contentPane.add(lblSendMessage);
 		
 		
@@ -253,27 +235,27 @@ public class Window extends JFrame {
 		        if (e.getKeyCode() == KeyEvent.VK_ENTER && !e.isShiftDown()) {
 		        	sendMessage();
 		        	sendTextArea.setText(null);
+		        	e.consume();
 		        }
 		        else if (e.getKeyCode() == KeyEvent.VK_ENTER && e.isShiftDown()) {
 		        	sendTextArea.setText(sendTextArea.getText()+ "\n");
+		        }else if (e.getKeyCode() == KeyEvent.VK_ENTER){
+//		        	sendTextArea.setText(null);
+		        	 e.consume();
 		        }
 		    }
-			public void keyReleased(KeyEvent e) {
-				if (e.getKeyCode() == KeyEvent.VK_ENTER && sendTextArea.getText().equals("\n")) {
-		        	sendTextArea.setText(null);
-		        }
-			}
+			public void keyReleased(KeyEvent e) {}
 			public void keyTyped(KeyEvent arg0) {}
 		});
 		JScrollPane sendTextScrollPane = new JScrollPane (sendTextArea);
-		sendTextScrollPane.setBounds(451, 589, 366, 84);
+		sendTextScrollPane.setBounds(270, 589, 526, 84);
 	    sendTextScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         sendTextScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         contentPane.add(sendTextScrollPane);
 		
 		
 		JButton btnSend = new JButton("Send");
-		btnSend.setBounds(728, 673, 89, 23);
+		btnSend.setBounds(706, 674, 89, 23);
 		btnSend.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
 		    	sendMessage();
@@ -312,7 +294,7 @@ public class Window extends JFrame {
 				updateServerComboBox();
 			}
 		});
-		btnUpdateLists.setBounds(909, 571, 89, 23);
+		btnUpdateLists.setBounds(910, 331, 89, 23);
 		contentPane.add(btnUpdateLists);
 		
 		requireMentionCheckBox = new JCheckBox("Require mention");
@@ -330,7 +312,7 @@ public class Window extends JFrame {
 		contentPane.add(requireMentionCheckBox);
 		
 		checkBoxSaveProperties = new JCheckBox("Save Preferences");
-		checkBoxSaveProperties.setBounds(252, 673, 129, 23);
+		checkBoxSaveProperties.setBounds(75, 674, 129, 23);
 		checkBoxSaveProperties.addItemListener(new ItemListener() {
 		    public void itemStateChanged(ItemEvent e) {
 		        if(e.getStateChange() == ItemEvent.SELECTED) {//checkbox has been selected
@@ -343,22 +325,22 @@ public class Window extends JFrame {
 		contentPane.add(checkBoxSaveProperties);
 		
 		sendAsCommandCheckBox = new JCheckBox("Send as command");
-		sendAsCommandCheckBox.setBounds(451, 673, 149, 23);
+		sendAsCommandCheckBox.setBounds(269, 673, 149, 23);
 		contentPane.add(sendAsCommandCheckBox);
 		
 		JLabel lblUserList = new JLabel("User List");
 		lblUserList.setBounds(807, 442, 78, 14);
 		contentPane.add(lblUserList);
 		
-		userListModel = new DefaultListModel();
-		JList userList = new JList(userListModel);
+		userListModel = new DefaultListModel<String>();
+		JList<String> userList = new JList<String>(userListModel);
 		userList.addMouseListener( new MouseAdapter()
 		{
 		    public void mousePressed(MouseEvent e)
 		    {
 		        if ( SwingUtilities.isRightMouseButton(e) )
 		        {
-		            JList list = (JList)e.getSource();
+		            JList<?> list = (JList<?>)e.getSource();
 		            int row = list.locationToIndex(e.getPoint());
 		            list.setSelectedIndex(row);
 		            
@@ -369,12 +351,10 @@ public class Window extends JFrame {
 
 		});
 		JScrollPane scrollPane = new JScrollPane(userList);
-		scrollPane.setBounds(807, 459, 191, 96);
+		scrollPane.setBounds(807, 459, 191, 196);
 		contentPane.add(scrollPane);
 		
 		Vector<Component> order = new Vector<Component>(7);
-	    order.add(usernameField);
-	    order.add(passwordField);
 	    order.add(tokenField);
 	    newPolicy = new WindowTraversalPolicy(order);
 	    setFocusTraversalPolicy(newPolicy);
@@ -463,8 +443,6 @@ public class Window extends JFrame {
 	}
 	
 	public void getProperties(){
-		usernameField.setText(rainbotProperties.getProperty("Email"));
-		passwordField.setText(rainbotProperties.getProperty("Pw"));
 		tokenField.setText(rainbotProperties.getProperty("Token"));
 		
 		messageProcessorCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Enable Commands")));
@@ -481,8 +459,6 @@ public class Window extends JFrame {
 	public void setProperties(){
 		rainbotProperties.setProperty("saveProperties", "true");
 		
-		rainbotProperties.setProperty("Email", usernameField.getText());
-		rainbotProperties.setProperty("Pw", passwordField.getPassword().toString());
 		rainbotProperties.setProperty("Token", tokenField.getText());
 		
 		rainbotProperties.setProperty("Enable Commands", Boolean.toString(messageProcessorCheckBox.isSelected()));
@@ -494,9 +470,7 @@ public class Window extends JFrame {
 	
 	public void clearProperties(){
 		rainbotProperties.setProperty("saveProperties", "false");
-		
-		rainbotProperties.clearProperty("Email");
-		rainbotProperties.clearProperty("Pw");
+
 		rainbotProperties.clearProperty("Token");
 		
 		rainbotProperties.clearProperty("Enable Commands");
@@ -514,13 +488,13 @@ public class Window extends JFrame {
 		consoleTextArea.setText(s + "\n" + text);
 		consoleTextArea.setCaretPosition(consoleTextArea.getDocument().getLength());
 		try {
-			saveToFile(text);
+			saveToLog(text);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public void saveToFile(String text) throws Exception {
+	public void saveToLog(String text) throws Exception {
 	   FileOutputStream out = new FileOutputStream("console.log", true);
 	   text = text + "\n";
 	   out.write(text.getBytes());
@@ -530,7 +504,7 @@ public class Window extends JFrame {
 	public void sendMessage(){
     	if(getCurrentChannel() != null && sendTextArea.getText() != ""){
     		if(sendAsCommandCheckBox.isSelected()){
-    			String result = rainbot.messageProcessor.parseCommand(getCurrentChannel(), sendTextArea.getText());
+    			String result = rainbot.messageProcessor.parseCommand(sendTextArea.getText(), getCurrentChannel(), rainbot.getImplDiscordAPI().getYourself(), null);
     			if(result != null){
     				rainbot.messageProcessor.queueMessage(getCurrentChannel(), "`" + sendTextArea.getText() + "`\n\n" + result);
     			}
@@ -540,4 +514,8 @@ public class Window extends JFrame {
         	sendTextArea.setText(null);
     	}
 	}	
+	
+	public Rainbot getRainbot(){
+		return rainbot;
+	}
 }

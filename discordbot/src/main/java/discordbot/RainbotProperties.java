@@ -61,7 +61,7 @@ public class RainbotProperties {
 			//remove property
 			prop.remove(key);
 			// save properties to project root folder
-			prop.store(output, null);
+			prop.store(output, "");
 		} catch (IOException io) {
 			io.printStackTrace();
 		} finally {

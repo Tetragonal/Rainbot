@@ -1,5 +1,7 @@
 package discordbot;
 
+import window.Window;
+
 public class RainbotShutdown extends Thread{
 	private Rainbot rainbot;
 	private Window window;
@@ -10,6 +12,7 @@ public class RainbotShutdown extends Thread{
 	
 	public void run() {
 		rainbot.disconnect();
+		rainbot.createListener.dailyLogger.saveMessageList();
     		try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {

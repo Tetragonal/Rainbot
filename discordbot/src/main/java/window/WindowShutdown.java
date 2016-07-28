@@ -1,4 +1,4 @@
-package discordbot;
+package window;
 
 public class WindowShutdown extends Thread{
 	private Window window;
@@ -6,7 +6,9 @@ public class WindowShutdown extends Thread{
 		this.window = window;
 	}
 	public void run() {
-		window.setProperties();
+		if(window.checkBoxSaveProperties.isSelected()){
+			window.setProperties();
+		}
     		try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
