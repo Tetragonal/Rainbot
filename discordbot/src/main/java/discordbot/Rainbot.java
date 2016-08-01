@@ -1,9 +1,5 @@
 package discordbot;
 
-import java.io.FileOutputStream;
-
-import javax.swing.JTextField;
-
 import com.google.common.util.concurrent.FutureCallback;
 
 import de.btobastian.javacord.DiscordAPI;
@@ -56,6 +52,7 @@ public class Rainbot {
 	            	parentWindow.setLblUser("Logged in as bot user: " + api.getYourself().getName() + "#" + api.getYourself().getDiscriminator());
 	            	parentWindow.addToConsoleLog("Logged in as bot user: " + api.getYourself().getName() + "#" + api.getYourself().getDiscriminator());
 	            	parentWindow.updateServerComboBox();
+	            	createListener.createTimers();
             	}
 	            public void onFailure(Throwable t) {
 	            	parentWindow.setBtnConnectToggle(false);

@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -68,8 +69,7 @@ public class DailyLogger {
 	
 	public void loadMessageList(String logName){
 		messageList.clear();
-		  try  
-		  {
+		  try {
 			  FileInputStream inputFileStream;
 			  if(logName == null){
 				  inputFileStream = new FileInputStream("./logs/" + sdf.format(currentTime) + ".log");
@@ -83,10 +83,9 @@ public class DailyLogger {
 		  } 
 		  catch (Exception e)
 		  {
-//			  e.printStackTrace(); 
+			  e.printStackTrace(); 
 		  }
 		  System.out.println("loaded " + messageList.size() + " messages");
-//
 	}
 	
 	public void saveMessageList(){
@@ -97,31 +96,16 @@ public class DailyLogger {
 		try {
 			f_out = new FileOutputStream("./logs/" + sdf.format(currentTime) + ".log");
 		} catch (FileNotFoundException e2) {
-			// TODO Auto-generated catch block
 			e2.printStackTrace();
 		}
-
     	// Write object with ObjectOutputStream
     	ObjectOutputStream obj_out = null;
 		try {
-			obj_out = new
-				ObjectOutputStream (f_out);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
+			obj_out = new ObjectOutputStream (f_out);
     	// Write object out to disk
-    	try {
 			obj_out.writeObject ( messageList );
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	try {
 			obj_out.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -144,18 +128,60 @@ public class DailyLogger {
 		return new Object[]{stream, count};		
 	}
 	
-	public String getUserActivity(){
-		String activityReport = "User activity for today:\n";
+	/**
+	 *   @return <b>InputStream</b> log file<br>
+	 *   <b>int</b> count of the amount of instances
+	 */
+	public Object[] getLog(Channel channel){
+		String logText = "";
+		int logCount = 0;
+		for(MessageData messageData : messageList){
+			if(channel.getServer().getId().equals(messageData.serverReceiverID)){
+				logText = logText + messageData.toString() + "\n";
+				logCount++;
+			}
+		}
+		logText = sdf.format(currentTime) + " log, Server ID=" + channel.getServer().getId() + "\n\n" + logText;
+		InputStream stream = new ByteArrayInputStream(logText.getBytes(StandardCharsets.UTF_8));
+		return new Object[]{stream, logCount};
+	}
+	
+	
+	public String getUserActivity(Channel channel){		
+    	Calendar calendar = Calendar.getInstance();
+    	String activityReport = ""
+    			+ "User activity for today:\n\n"
+    			+ "```\n"
+    			+ String.format("%1$-25s", "Username:") 
+    			+ String.format("%1$-8s", "#:") 
+    			+ String.format("%1$-10s", "%:")
+    			+ "type:"
+				+ "\n";
+		
+		//calendar doesn't convert properly on its own, so using this for now
+    	float minutes = 60*calendar.get(Calendar.HOUR_OF_DAY) + calendar.get(Calendar.MINUTE);
+    	
+    	//special case for when printing at exactly midnight
+    	if(minutes < 0.05){
+    		System.out.println("DailyLogger.java minutes: " + minutes) ;
+    		minutes = 60*24;
+    	}
+    	
 		TreeMap<String, Integer> userActivityMap = new TreeMap<String, Integer>(); //userID, messagesSent
 		//create user activity map
+		int messageCount = 0;
 		for(MessageData messageData : messageList){
-			if(userActivityMap.containsKey(messageData.authorID)){
-				userActivityMap.put(messageData.authorID, userActivityMap.get(messageData.authorID) + 1);
-			}else{
-				userActivityMap.put(messageData.authorID, 1);
+			if(messageData.serverReceiverID.equals(channel.getServer().getId())){
+				if(userActivityMap.containsKey(messageData.authorID)){
+					userActivityMap.put(messageData.authorID, userActivityMap.get(messageData.authorID) + 1);
+				}else{
+					userActivityMap.put(messageData.authorID, 1);
+				}
+				messageCount++;
 			}
 		}
 		
+		DecimalFormat fmt = new DecimalFormat ("0.00");
 		//sort users based on messages sent
 		Map<String, Integer> sortedMap = sortByComparator(userActivityMap);
 		//print stuff based on map		
@@ -165,11 +191,20 @@ public class DailyLogger {
 			try {
 				user = futureUser.get();
 			} catch (InterruptedException | ExecutionException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			activityReport = activityReport + user.getName() + "#" + user.getDiscriminator() + ": " + userActivityMap.get(userID) + "\n";
+			
+			activityReport += ""
+					+ String.format("%1$-25s", user.getName() + "#" + user.getDiscriminator())
+					+ String.format("%1$-8s", userActivityMap.get(userID)) 
+					+ String.format("%1$-10s",  fmt.format((100.0*userActivityMap.get(userID)/messageCount)));
+			if(user.isBot()){
+				 activityReport += "bot";
+			}
+			activityReport += "\n";
 		}
+		
+		activityReport = activityReport + "\n```\nTotal message count: " + messageCount + " (" + fmt.format(messageCount/minutes) + " messages per minute)\n";
 		return activityReport;
 		
 	}
@@ -178,7 +213,6 @@ public class DailyLogger {
 	private Map<String, Integer> sortByComparator(Map<String, Integer> unsortMap)
     {
         List<Entry<String, Integer>> list = new LinkedList<Entry<String, Integer>>(unsortMap.entrySet());
-		System.out.println("hi4");
         // Sorting the list based on values
         Collections.sort(list, new Comparator<Entry<String, Integer>>()
         {
@@ -195,7 +229,6 @@ public class DailyLogger {
         {
             sortedMap.put(entry.getKey(), entry.getValue());
         }
-		System.out.println("hi5");
         return sortedMap;
     }
 

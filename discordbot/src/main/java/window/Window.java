@@ -2,9 +2,7 @@ package window;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.EventQueue;
-import java.awt.FocusTraversalPolicy;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,7 +25,6 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -39,7 +36,6 @@ import javax.swing.border.EmptyBorder;
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.Server;
 import de.btobastian.javacord.entities.User;
-import de.btobastian.javacord.entities.message.Message;
 import discordbot.Rainbot;
 import discordbot.RainbotProperties;
 
@@ -259,7 +255,7 @@ public class Window extends JFrame {
 		btnSend.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
 		    	sendMessage();
-	            sendTextArea.requestFocusInWindow();
+	            sendTextArea.requestFocusInWindow();            
 		    }
 		});
 		contentPane.add(btnSend);

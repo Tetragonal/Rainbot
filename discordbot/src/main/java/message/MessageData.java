@@ -19,7 +19,6 @@ public class MessageData implements Serializable{
 	public String channelReceiverID;
 	
 	public String messageTimestamp;
-//	public int year, month, day;
 	
 	public MessageData(Message message){
     	Calendar calendar = message.getCreationDate();
@@ -30,10 +29,6 @@ public class MessageData implements Serializable{
     	}
     	SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     	messageTimestamp = sf.format(calendar.getTime());
-//    	
-//    	year = calendar.get(Calendar.YEAR);
-//    	month = calendar.get(Calendar.MONTH);
-//    	day = calendar.get(Calendar.DAY_OF_MONTH);
 
 		messageContent = message.getContent();
 		authorName = message.getAuthor().getName();

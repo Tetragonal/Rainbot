@@ -1,5 +1,6 @@
 package message;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -13,6 +14,7 @@ import java.util.concurrent.Future;
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.User;
 import de.btobastian.javacord.entities.message.Message;
+import de.btobastian.javacord.entities.message.MessageAttachment;
 import discordbot.Rainbot;
 
 public class MessageProcessor extends Thread{
@@ -24,29 +26,32 @@ public class MessageProcessor extends Thread{
 	public boolean requireMention = true;
 	
 	private Rainbot rainbot;
+	private FileProcessor fileProcessor;
 	
 	public MessageProcessor(Rainbot rainbot){
 		 this.rainbot = rainbot;
+		 fileProcessor = new FileProcessor();
 	}
 	
 	public void run() {
-			 sendMessages();
+		sendMessages();
     }
 	
 	public void sendMessages(){		
-		if(channelList.size() > 0 && messageList.size() > 0){
-			Channel c = channelList.get(0);
-			String s = messageList.get(0);
-			c.sendMessage(s);
-			channelList.remove(0);
-			messageList.remove(0);
+		while(true){
+			if(channelList.size() > 0 && messageList.size() > 0){
+				Channel c = channelList.get(0);
+				String s = messageList.get(0);
+				c.sendMessage(s);
+				channelList.remove(0);
+				messageList.remove(0);
+			}
+			try {
+				sleep(1100); //to avoid automute from sending messages too quickly
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		try {
-			sleep(1100); //to avoid automute from sending messages too quickly
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		sendMessages();
 	}
 	
 	public void queueMessage(Channel channel, String message){
@@ -116,30 +121,93 @@ public class MessageProcessor extends Thread{
 		else if(s.equalsIgnoreCase("feelsbadman")){
 			return ":frowning:";
         }
-		
+		else if(s.length() >= 7+1 && s.substring(0,7).equals("upload ") && message.getAttachments().size() > 0){
+			s = s.substring(7);
+			
+			String folderName = s.substring(0, s.indexOf(" "));
+			String fileName = s.substring(s.indexOf(" ")+1);
+			
+			MessageAttachment messageAttachment = message.getAttachments().iterator().next();
+			boolean addedFile = fileProcessor.addFile(folderName, fileName, messageAttachment);
+			if(addedFile){
+		    	return "uploaded img \"" + fileName + "\"";
+			}else{
+				return "Upload failed";
+			}
+		}
+		else if(s.equalsIgnoreCase("imagelist")){
+			return fileProcessor.getImageList();
+		}
+		else if(s.length() >= 4 && s.substring(0,4).equals("dir ")){
+			s = s.substring(4);
+			return fileProcessor.getFilesInDirectory(s);
+		}
+		else if(s.length() >= 12+1 && s.substring(0,12).equals("randomimage ")){
+			s = s.substring(12);
+			
+			File image = fileProcessor.getRandomImage(s);
+			
+			if(message != null){
+				message.replyFile(image, image.getName());
+			}else{
+				channel.sendFile(image, image.getName());
+			}
+			return null;
+		}
+		else if (s.length() >= 9+1 && s.substring(0,9).equals("getimage ")){
+			s = s.substring(9);
+			
+			String folderName = s.substring(0, s.indexOf(" "));
+			String fileName = s.substring(s.indexOf(" ")+1);
+
+			File image = fileProcessor.getFile(folderName, fileName);
+			if(message != null){
+				message.replyFile(image, image.getName());
+			}else{
+				channel.sendFile(image, image.getName());
+			}	
+	    	return null;
+		}
+		else if (s.length() >= 12+1 && s.substring(0,12).equals("removeimage ")){
+			s = s.substring(12);
+			
+			String folderName = s.substring(0, s.indexOf(" "));
+			String fileName = s.substring(s.indexOf(" ")+1);
+
+			fileProcessor.removeFile(folderName, fileName);
+			return "removed image " + folderName + "/" + fileName;
+		}
 		//special cases
         else if(s.equalsIgnoreCase("help")){
         	author.sendMessage(""
         			+ "`help`\n\n"
-        			+ "Commands:\n"
-        			+ "    status\n"
+        			+ "Bot info:\n"
+        			+ "    help\n"
+        			+ "    status\n\n"
+        			+ "Utilities:\n"
         			+ "    pickuser\n"
         			+ "    diceroll\n"
         			+ "    coinflip\n"
-        			+ "    ping\n"
         			+ "    google [query]\n"
+        			+ "    stackoverflow [query]\n"
         			+ "    pick [arg1] [arg2] ...\n"
         			+ "    spam [arg1] [arg2] ...\n"
         			+ "    find [text]\n"
         			+ "    finddate [yyyy-mm-dd] [text]\n"
         			+ "    useractivity\n\n"
+        			+ "Image/File hosting:\n"
+        			+ "    upload [directory] [filename]   (Attach file to be uploaded)\n"
+        			+ "    getimage [directory] [filename]\n"
+        			+ "    removeimage [directory] [filename]\n"
+        			+ "    randomimage [directory]\n"
+        			+ "    dir [directory]\n"
+        			+ "    imagelist\n\n"
         			+ "Replies:\n"
         			+ "    ping -> pong\n"
         			+ "    bye -> bye!!!!\n"
         			+ "    hi -> hi!!!!\n"
         			+ "    hey jay where do you live -> hey jay where do you live (x5)\n"
-        			+ "    feelsbadman -> :frowning:\n"
-        			+ "    meow -> feris.jpg");
+        			+ "    feelsbadman -> :frowning:");
         	if(message != null){
         		message.delete();
         	}
@@ -161,16 +229,15 @@ public class MessageProcessor extends Thread{
         else if(s.length() >= 5+3 && s.substring(0,5).equals("find ")){
 			s = s.substring(5);
 			
-			
 			Object[] findResults = rainbot.createListener.dailyLogger.find(channel, s);
 			InputStream findStream = (InputStream) findResults[0];
 			int instanceCount = (int) findResults[1];
 
 			if(instanceCount > 0){
 				if(message != null && instanceCount > 0){
-					message.replyFile(findStream, "instances of '" + s + "'.txt");
+					message.replyFile(findStream, "instances of '" + s + "'.rtf", "Found " + instanceCount + " instances of '" + s + "' in today's log");
 				}else{
-					channel.sendFile(findStream, "instances of '" + s + "'.txt");
+					channel.sendFile(findStream, "instances of '" + s + "'.rtf", "Found " + instanceCount + " instances of '" + s + "' in today's log");
 				}
 			}
 			try {
@@ -179,7 +246,7 @@ public class MessageProcessor extends Thread{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			return "Found " + instanceCount + " instances of '" + s + "' in today's log";
+			return null;
 		}
         else if(s.length() >= 9+3 && s.substring(0,9).equals("finddate ")){
 			s = s.substring(9);
@@ -194,36 +261,61 @@ public class MessageProcessor extends Thread{
 			int instanceCount = (int) findResults[1];
 			if(instanceCount > 0){
 				if(message != null){
-					message.replyFile(findStream, "instances of '" + s + "'.txt");
+					message.replyFile(findStream, "instances of '" + s + "'.rtf", "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log");
 				}else{
-					channel.sendFile(findStream, "instances of '" + s + "'.txt");
+					channel.sendFile(findStream, "instances of '" + s + "'.rtf", "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log");
 				}
 			}
 			try {
 				findStream.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			return "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log";
+			return null;
 		}
-        else if(s.equalsIgnoreCase("useractivity")){
-        	return rainbot.createListener.dailyLogger.getUserActivity();
-        }
-        else if(s.equalsIgnoreCase("meow")){
-        	InputStream is = this.getClass().getResourceAsStream("../feris.jpg");
-			Future<Message> futureMessage =  channel.sendFile(is, "feris.jpg");
-			try {
-				futureMessage.get();
-				try {
-					is.close();
-				} catch (IOException e) {
-					e.printStackTrace();
+        else if(s.length() >= 3 && s.equalsIgnoreCase("log")){
+        	Object[] logResults = rainbot.createListener.dailyLogger.getLog(channel);
+        	InputStream logStream = (InputStream) logResults[0];
+        	int messageCount = (int) logResults[1];
+			if(messageCount > 0){
+				if(message != null){
+					message.replyFile(logStream, "log.rtf", "Log contains " + messageCount + " messages");
+				}else{
+					channel.sendFile(logStream, "log.rtf", "Log contains " + messageCount + " messages");
 				}
-			} catch (InterruptedException | ExecutionException e) {
+			}
+			try {
+				logStream.close();
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
         	return null;
+        }
+		
+        else if(s.length() >= 8 && s.substring(0,8).equals("logdate ")){
+			s = s.substring(8);
+        	DailyLogger dailyLogger = getDailyLogger(s);
+        	Object[] logResults = dailyLogger.getLog(channel);
+        	InputStream logStream = (InputStream) logResults[0];
+        	int messageCount = (int) logResults[1];
+			if(messageCount > 0){
+				if(message != null){
+					message.replyFile(logStream, "log " + s + ".rtf", "Log contains " + messageCount + " messages");
+				}else{
+					channel.sendFile(logStream, "log " + s + ".rtf", "Log contains " + messageCount + " messages");
+				}
+			}
+			try {
+				logStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+        	return null;
+        }
+		
+		
+        else if(s.equalsIgnoreCase("useractivity")){
+        	return rainbot.createListener.dailyLogger.getUserActivity(channel);
         }
 		
 		//parse if js if not a command
@@ -246,9 +338,6 @@ public class MessageProcessor extends Thread{
 	
 	public void receiveMessage(Message message){
 		if(!message.getAuthor().isBot() && isActive){
-			if (message.getContent().matches("[A-Z^\\s+$]+") && message.getContent().length() >= 3){
-	        	queueMessage(message.getChannelReceiver(), "shut up");
-	        }
     		if(!(requireMention) || message.getMentions().contains(rainbot.getImplDiscordAPI().getYourself()) && message.getMentions().size() == 1){
     			String command = "";
     			if(message.getMentions().contains(rainbot.getImplDiscordAPI().getYourself())){
@@ -261,6 +350,10 @@ public class MessageProcessor extends Thread{
     				queueMessage(message.getChannelReceiver(), result);
     			}
     		}
+    		//special cases
+//			if (message.getContent().matches("[A-Z^\\s+$]+") && message.getContent().length() >= 4){
+//	        	queueMessage(message.getChannelReceiver(), "pls no caps lock");
+//	        }
 		}
 	}
 	
