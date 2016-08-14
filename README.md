@@ -6,4 +6,4 @@ https://discordapp.com/developers/applications/me to create a bot account<br />
 https://discordapp.com/oauth2/authorize?&client_id=token&scope=bot to add the bot to a server (replace "token" with the bot account token)
 
 Includes message logging, searching, and server commands<br />
-PM "help" to an instance of the bot for a list of commands
+PM "help" to the bot or see [this page](https://github.com/Tetragonal/Rainbot/wiki) for a list of commands
