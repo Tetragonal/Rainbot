@@ -2,6 +2,7 @@
 Bot for [Discord](https://discordapp.com/) using the [Javacord](https://github.com/BtoBastian/Javacord) library
 
 Requires a bot account and token to log in:
+
 https://discordapp.com/developers/applications/me to create a bot account
 https://discordapp.com/oauth2/authorize?&client_id=token&scope=bot to add the bot to a server (replace "token" with the bot account token)
 
