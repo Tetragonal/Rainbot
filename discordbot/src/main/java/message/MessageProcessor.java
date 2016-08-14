@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.User;
@@ -85,7 +83,11 @@ public class MessageProcessor extends Thread{
 			s = s.substring(5);
 			String[] sArray = s.split(" ");
 			return "I choose " + sArray[(int)(Math.random()*sArray.length)];
-		}	
+		}
+		else if(s.length() >= 5 && s.substring(0,5).equals("rate ")){
+			s = s.substring(5);
+			return "I rate " + s + " " + ((int)(Math.random()*10) + 1) + "/10";
+		}
 		else if(s.length() >= 5 && s.substring(0,5).equals("spam ")){
 			s = s.substring(5);
 			String[] sArray = s.split(" ");
@@ -104,7 +106,7 @@ public class MessageProcessor extends Thread{
 			}
 		}
 		else if(s.equalsIgnoreCase("diceroll")){
-			return ""+(int)(Math.random()*6 + 1);
+			return ":game_die: "+(int)(Math.random()*6 + 1);
 		}
 		else if (s.equalsIgnoreCase("ping")) {
 			return "pong";
@@ -114,9 +116,6 @@ public class MessageProcessor extends Thread{
         }
 		else if (s.equalsIgnoreCase("hi") | s.equalsIgnoreCase("hello")) {
 			return "hi!!!!";
-        }
-		else if(s.equalsIgnoreCase("hey jay where do you live")){
-			return "hey jay where do you live\nhey jay where do you live\nhey jay where do you live\nhey jay where do you live\nhey jay where do you live";
         }
 		else if(s.equalsIgnoreCase("feelsbadman")){
 			return ":frowning:";
@@ -136,7 +135,7 @@ public class MessageProcessor extends Thread{
 			}
 		}
 		else if(s.equalsIgnoreCase("imagelist")){
-			return fileProcessor.getImageList();
+			return fileProcessor.getFileList();
 		}
 		else if(s.length() >= 4 && s.substring(0,4).equals("dir ")){
 			s = s.substring(4);
@@ -145,7 +144,7 @@ public class MessageProcessor extends Thread{
 		else if(s.length() >= 12+1 && s.substring(0,12).equals("randomimage ")){
 			s = s.substring(12);
 			
-			File image = fileProcessor.getRandomImage(s);
+			File image = fileProcessor.getRandomFile(s);
 			
 			if(message != null){
 				message.replyFile(image, image.getName());
@@ -178,20 +177,25 @@ public class MessageProcessor extends Thread{
 			return "removed image " + folderName + "/" + fileName;
 		}
 		//special cases
-        else if(s.equalsIgnoreCase("help")){
-        	author.sendMessage(""
+        else if(s.equalsIgnoreCase("help") || s.equalsIgnoreCase("help2")){
+        	String helpString = ""
         			+ "`help`\n\n"
         			+ "Bot info:\n"
         			+ "    help\n"
+        			+ "    help2 (broadcasts to channel)\n"
         			+ "    status\n\n"
         			+ "Utilities:\n"
         			+ "    pickuser\n"
         			+ "    diceroll\n"
         			+ "    coinflip\n"
+        			+ "    rate [arg]\n"
+        			+ "    pick [arg0] [arg1] ...\n"
+        			+ "    spam [arg0] [arg1] ...\n"
         			+ "    google [query]\n"
-        			+ "    stackoverflow [query]\n"
-        			+ "    pick [arg1] [arg2] ...\n"
-        			+ "    spam [arg1] [arg2] ...\n"
+        			+ "    stackoverflow [query]\n\n"
+        			+ "Logging:\n"
+        			+ "    log\n"
+        			+ "    logdate [yyyy-mm-dd]\n"
         			+ "    find [text]\n"
         			+ "    finddate [yyyy-mm-dd] [text]\n"
         			+ "    useractivity\n\n"
@@ -206,10 +210,15 @@ public class MessageProcessor extends Thread{
         			+ "    ping -> pong\n"
         			+ "    bye -> bye!!!!\n"
         			+ "    hi -> hi!!!!\n"
-        			+ "    hey jay where do you live -> hey jay where do you live (x5)\n"
-        			+ "    feelsbadman -> :frowning:");
-        	if(message != null){
-        		message.delete();
+        			+ "    feelsbadman -> :frowning:";
+        	if(s.equalsIgnoreCase("help")){
+            	author.sendMessage(helpString);
+            	if(message != null){
+            		message.delete();
+            	}
+        	}
+        	else{
+        		message.reply(helpString);
         	}
         	return null;
         }
@@ -235,15 +244,14 @@ public class MessageProcessor extends Thread{
 
 			if(instanceCount > 0){
 				if(message != null && instanceCount > 0){
-					message.replyFile(findStream, "instances of '" + s + "'.rtf", "Found " + instanceCount + " instances of '" + s + "' in today's log");
+					message.replyFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in today's log");
 				}else{
-					channel.sendFile(findStream, "instances of '" + s + "'.rtf", "Found " + instanceCount + " instances of '" + s + "' in today's log");
+					channel.sendFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in today's log");
 				}
 			}
 			try {
 				findStream.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			return null;
@@ -261,9 +269,9 @@ public class MessageProcessor extends Thread{
 			int instanceCount = (int) findResults[1];
 			if(instanceCount > 0){
 				if(message != null){
-					message.replyFile(findStream, "instances of '" + s + "'.rtf", "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log");
+					message.replyFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log");
 				}else{
-					channel.sendFile(findStream, "instances of '" + s + "'.rtf", "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log");
+					channel.sendFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log");
 				}
 			}
 			try {
@@ -279,9 +287,9 @@ public class MessageProcessor extends Thread{
         	int messageCount = (int) logResults[1];
 			if(messageCount > 0){
 				if(message != null){
-					message.replyFile(logStream, "log.rtf", "Log contains " + messageCount + " messages");
+					message.replyFile(logStream, "message.log", "Log contains " + messageCount + " messages");
 				}else{
-					channel.sendFile(logStream, "log.rtf", "Log contains " + messageCount + " messages");
+					channel.sendFile(logStream, "message.log", "Log contains " + messageCount + " messages");
 				}
 			}
 			try {
@@ -300,9 +308,9 @@ public class MessageProcessor extends Thread{
         	int messageCount = (int) logResults[1];
 			if(messageCount > 0){
 				if(message != null){
-					message.replyFile(logStream, "log " + s + ".rtf", "Log contains " + messageCount + " messages");
+					message.replyFile(logStream, s + ".log", "Log contains " + messageCount + " messages");
 				}else{
-					channel.sendFile(logStream, "log " + s + ".rtf", "Log contains " + messageCount + " messages");
+					channel.sendFile(logStream, s + ".log", "Log contains " + messageCount + " messages");
 				}
 			}
 			try {
@@ -312,8 +320,6 @@ public class MessageProcessor extends Thread{
 			}
         	return null;
         }
-		
-		
         else if(s.equalsIgnoreCase("useractivity")){
         	return rainbot.createListener.dailyLogger.getUserActivity(channel);
         }
@@ -334,7 +340,6 @@ public class MessageProcessor extends Thread{
 		}
 		else return new DailyLogger(rainbot, logName); //makes new logger if loading old stuff
 	}
-	
 	
 	public void receiveMessage(Message message){
 		if(!message.getAuthor().isBot() && isActive){

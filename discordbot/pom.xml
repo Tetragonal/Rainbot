@@ -4,12 +4,12 @@
   <artifactId>discordbot</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>Rainbot</name>
-  <description>Discord text bot using Java</description>
+  <description>Discord text bot using Java + Javacord</description>
   
   <repositories>
    <repository>
      <id>javacord-repo</id>
-  	 <url>http://repo.bastian-oppermann.de</url>
+  	 <url>http://testrepo.bastian-oppermann.de</url>
    </repository>
   </repositories>
 
@@ -17,7 +17,7 @@
    <dependency>
      <groupId>de.btobastian.javacord</groupId>
      <artifactId>javacord</artifactId>
-     <version>2.0.10</version>
+     <version>2.0.10-12</version>
       <!-- This will use the shaded javacord which contains all required dependencies -->
      <classifier>shaded</classifier>
    </dependency>

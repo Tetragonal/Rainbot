@@ -17,7 +17,7 @@ public class FileProcessor {
 	}
 
 	public boolean addFile(String directoryName, String fileName, MessageAttachment messageAttachment){ //inputstream
-		if(getFileWithName(directoryName, fileName) != null){
+		if(getFileWithName(directoryName, fileName) == null){
 			directoryName = checkDirectory(directoryName);
 			InputStream in;
 			try {
@@ -47,7 +47,7 @@ public class FileProcessor {
 				fos.close();
 				return true;
 			} catch (IOException e1) {
-				//check if no images in directory
+				//check if no files in directory
 				String directory = getFilesInDirectory(directoryName);
 				if(directory.equals(directoryName + "\n")){
 					File directoryToDelete = new File("img/" + directoryName);
@@ -66,7 +66,7 @@ public class FileProcessor {
 		File fileToDelete = new File("img/" + directoryName + "/" + fileName);
 		fileToDelete.delete();
 		
-		//check if no images in directory
+		//check if no files in directory
 		String directory = getFilesInDirectory(directoryName);
 		if(directory.equals(directoryName + "\n")){
 			File directoryToDelete = new File("img/" + directoryName);
@@ -74,11 +74,11 @@ public class FileProcessor {
 		}
 	}
 	
-	public File getRandomImage(String directoryName){
+	public File getRandomFile(String directoryName){
 		directoryName = checkDirectory(directoryName);
 		ArrayList<String> imgList = new ArrayList<String>();
 		
-		//make list of all image file locations in directory
+		//make list of all file locations in directory
 		String localPath = null;
 		 try {
 			 localPath = new File("").getCanonicalPath();
@@ -91,7 +91,7 @@ public class FileProcessor {
 			String imgLocation = img.getAbsolutePath();
 			imgList.add(imgLocation);
 		}
-		//pick a random image
+		//pick a random file
 		int randomIndex = (int)(Math.random()*imgList.size());
 		File randomFile = new File(imgList.get(randomIndex));
 		return randomFile;
@@ -129,7 +129,7 @@ public class FileProcessor {
 		return list;
 	}
 	
-	public String getImageList(){
+	public String getFileList(){
 		String list = "";
 		String localPath = null;
 		 try {
@@ -151,7 +151,7 @@ public class FileProcessor {
 	}
 	
 	public String checkDirectory(String directoryName){
-		return directoryName.replace("../", "").replace("/", "").replace("\"", "");
+		return directoryName.replace("../", "").replace("/", "").replace("\\", "");
 	}
 	
 	public String getFileWithName(String directoryName, String fileName){
@@ -162,9 +162,14 @@ public class FileProcessor {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		 
 		File directory = new File(localPath + "/img/" + directoryName);
-		File[] files = directory.listFiles();
-			
+		File[] files = null;
+		if(directory.exists()){
+			files = directory.listFiles();
+		}else return null;
+		
 		for(File file : files){
 			if(file.getName().substring(0, file.getName().lastIndexOf(".")).equals(fileName)){
 				String extension = "";

@@ -492,7 +492,7 @@ public class Window extends JFrame {
 	
 	public void saveToLog(String text) throws Exception {
 	   FileOutputStream out = new FileOutputStream("console.log", true);
-	   text = text + "\n";
+	   text = text + "\r\n";
 	   out.write(text.getBytes());
 	   out.close();
 	} 	

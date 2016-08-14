@@ -10,6 +10,8 @@ import de.btobastian.javacord.entities.message.Message;
 public class MessageData implements Serializable{
 	private static final long serialVersionUID = -2973824070721066287L;
 
+	public String messageID;
+	
 	public String messageContent;
 	public String authorName;
 	public String authorDiscriminator;
@@ -30,6 +32,8 @@ public class MessageData implements Serializable{
     	SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     	messageTimestamp = sf.format(calendar.getTime());
 
+    	messageID = message.getId();
+    	
 		messageContent = message.getContent();
 		authorName = message.getAuthor().getName();
 		authorDiscriminator = message.getAuthor().getDiscriminator();

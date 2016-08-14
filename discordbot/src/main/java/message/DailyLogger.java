@@ -10,6 +10,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -26,23 +27,24 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import de.btobastian.javacord.entities.Channel;
+import de.btobastian.javacord.entities.Server;
 import de.btobastian.javacord.entities.User;
 import de.btobastian.javacord.entities.message.Message;
+import de.btobastian.javacord.entities.message.MessageHistory;
 import discordbot.Rainbot;
 
 public class DailyLogger {
-	
 	public ArrayList<MessageData> messageList = new ArrayList<MessageData>();
 	
-	public Date currentTime;
-	private SimpleDateFormat sdf;
+	public Date currentDate;
+	public SimpleDateFormat sdf;
 	
 	private Rainbot rainbot;
 	
 	public DailyLogger(Rainbot rainbot){
 		this.rainbot = rainbot;
 		Calendar calendar = Calendar.getInstance();
-		currentTime = calendar.getTime();
+		currentDate = calendar.getTime();
 		sdf = new SimpleDateFormat("yyyy-MM-dd");
 		loadMessageList();
 	}
@@ -50,8 +52,13 @@ public class DailyLogger {
 	public DailyLogger(Rainbot rainbot, String logName){
 		this.rainbot = rainbot;
 		Calendar calendar = Calendar.getInstance();
-		currentTime = calendar.getTime();
 		sdf = new SimpleDateFormat("yyyy-MM-dd");
+		try {
+			calendar.setTime(sdf.parse(logName));
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		currentDate = calendar.getTime();
 		loadMessageList(logName);
 	}
 	
@@ -61,7 +68,6 @@ public class DailyLogger {
 		//add to today's list
 		messageList.add(messageData);
 	}
-
 	
 	public void loadMessageList(){
 		loadMessageList(null);
@@ -72,7 +78,7 @@ public class DailyLogger {
 		  try {
 			  FileInputStream inputFileStream;
 			  if(logName == null){
-				  inputFileStream = new FileInputStream("./logs/" + sdf.format(currentTime) + ".log");
+				  inputFileStream = new FileInputStream("./logs/" + sdf.format(currentDate) + ".log");
 			  }else{
 				  inputFileStream = new FileInputStream("./logs/" + logName + ".log");
 			  }
@@ -94,7 +100,7 @@ public class DailyLogger {
     	// Write to disk with FileOutputStream
     	FileOutputStream f_out = null;    	
 		try {
-			f_out = new FileOutputStream("./logs/" + sdf.format(currentTime) + ".log");
+			f_out = new FileOutputStream("./logs/" + sdf.format(currentDate) + ".log");
 		} catch (FileNotFoundException e2) {
 			e2.printStackTrace();
 		}
@@ -115,15 +121,15 @@ public class DailyLogger {
 	 *   <b>int</b> count of the amount of instances
 	 */
 	public Object[] find(Channel channel, String term) {
-		String instances = "";
+		String instances = "\r\n";
 		int count = 0;
 		for(MessageData messageData : messageList){
 			if(messageData.messageContent.contains(term) && channel.getServer().getId().equals(messageData.serverReceiverID)){
-				instances = instances + messageData.toString() + "\n";
+				instances = instances + messageData.toString().replace("\n", "\r\n") + "\r\n";
 				count++;
 			}
 		}
-		instances = "(" + sdf.format(currentTime) + ") Found " + count + " instances of " + term + " in Server ID " + channel.getServer().getId() + "\n\n" + instances;
+		instances = "(" + sdf.format(currentDate) + ") Found " + count + " instances of " + term + " in Server ID " + channel.getServer().getId() + "\r\n\r\n" + instances;
 		InputStream stream = new ByteArrayInputStream(instances.getBytes(StandardCharsets.UTF_8));
 		return new Object[]{stream, count};		
 	}
@@ -137,11 +143,11 @@ public class DailyLogger {
 		int logCount = 0;
 		for(MessageData messageData : messageList){
 			if(channel.getServer().getId().equals(messageData.serverReceiverID)){
-				logText = logText + messageData.toString() + "\n";
+				logText = logText + messageData.toString().replace("\n", "\r\n") + "\r\n";
 				logCount++;
 			}
 		}
-		logText = sdf.format(currentTime) + " log, Server ID=" + channel.getServer().getId() + "\n\n" + logText;
+		logText = sdf.format(currentDate) + " log, Server ID=" + channel.getServer().getId() + "\r\n\r\n" + logText;
 		InputStream stream = new ByteArrayInputStream(logText.getBytes(StandardCharsets.UTF_8));
 		return new Object[]{stream, logCount};
 	}
@@ -150,7 +156,7 @@ public class DailyLogger {
 	public String getUserActivity(Channel channel){		
     	Calendar calendar = Calendar.getInstance();
     	String activityReport = ""
-    			+ "User activity for today:\n\n"
+    			+ "User activity for today in #" + channel.getName() + ":\n\n"
     			+ "```\n"
     			+ String.format("%1$-25s", "Username:") 
     			+ String.format("%1$-8s", "#:") 
@@ -163,7 +169,6 @@ public class DailyLogger {
     	
     	//special case for when printing at exactly midnight
     	if(minutes < 0.05){
-    		System.out.println("DailyLogger.java minutes: " + minutes) ;
     		minutes = 60*24;
     	}
     	
@@ -171,7 +176,7 @@ public class DailyLogger {
 		//create user activity map
 		int messageCount = 0;
 		for(MessageData messageData : messageList){
-			if(messageData.serverReceiverID.equals(channel.getServer().getId())){
+			if(messageData.channelReceiverID.equals(channel.getId())){
 				if(userActivityMap.containsKey(messageData.authorID)){
 					userActivityMap.put(messageData.authorID, userActivityMap.get(messageData.authorID) + 1);
 				}else{
