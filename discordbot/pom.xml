@@ -29,5 +29,13 @@
     <version>1.0.13</version>
    </dependency>
 
+	<!-- https://mvnrepository.com/artifact/org.scilab.forge/jlatexmath -->
+	<dependency>
+	    <groupId>org.scilab.forge</groupId>
+	    <artifactId>jlatexmath</artifactId>
+	    <version>1.0.2</version>
+	</dependency>
+
+
   </dependencies>  
 </project>
