@@ -74,9 +74,28 @@ public class FileProcessor {
 		}
 	}
 	
+	public File getRandomFile(){
+		//make list of all file locations in \img\
+		String localPath = null;
+		 try {
+			 localPath = new File("").getCanonicalPath();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		 
+		ArrayList<File> imgList = new ArrayList<File>(); 
+		 
+		File[] dirList = new File(localPath + "/img").listFiles();
+		for(File directory : dirList){
+			File[] tempImgList = new File(directory.getAbsolutePath()).listFiles();
+			for(File img : tempImgList)
+			imgList.add(img);
+		}
+		return imgList.get((int)(Math.random()*imgList.size()));
+	}
+	
 	public File getRandomFile(String directoryName){
 		directoryName = checkDirectory(directoryName);
-		ArrayList<String> imgList = new ArrayList<String>();
 		
 		//make list of all file locations in directory
 		String localPath = null;
@@ -87,14 +106,9 @@ public class FileProcessor {
 		}
 		File directory = new File(localPath + "/img/" + directoryName);
 		File[] imgArray = new File(directory.getAbsolutePath()).listFiles();
-		for(File img : imgArray){
-			String imgLocation = img.getAbsolutePath();
-			imgList.add(imgLocation);
-		}
+		
 		//pick a random file
-		int randomIndex = (int)(Math.random()*imgList.size());
-		File randomFile = new File(imgList.get(randomIndex));
-		return randomFile;
+		return imgArray[(int)(Math.random()*imgArray.length)];
 	}
 	
 	public File getFile(String directoryName, String fileName){

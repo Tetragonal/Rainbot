@@ -27,10 +27,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import de.btobastian.javacord.entities.Channel;
-import de.btobastian.javacord.entities.Server;
 import de.btobastian.javacord.entities.User;
 import de.btobastian.javacord.entities.message.Message;
-import de.btobastian.javacord.entities.message.MessageHistory;
 import discordbot.Rainbot;
 
 public class DailyLogger {
@@ -38,6 +36,10 @@ public class DailyLogger {
 	
 	public Date currentDate;
 	public SimpleDateFormat sdf;
+	
+	//Used while saving to avoid a possible ConcurrentModificationException
+	private boolean isSaving = false;
+	private ArrayList<MessageData> messageQueue = new ArrayList<MessageData>();
 	
 	private Rainbot rainbot;
 	
@@ -66,13 +68,18 @@ public class DailyLogger {
 		//create serializable message
 		MessageData messageData = new MessageData(message);
 		//add to today's list
-		messageList.add(messageData);
+		if(!isSaving){
+			messageList.add(messageData);
+		}else{
+			messageQueue.add(messageData);
+		}
 	}
 	
 	public void loadMessageList(){
 		loadMessageList(null);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void loadMessageList(String logName){
 		messageList.clear();
 		  try {
@@ -95,6 +102,7 @@ public class DailyLogger {
 	}
 	
 	public void saveMessageList(){
+		isSaving = true;
 		//write today's log to a file
 		
     	// Write to disk with FileOutputStream
@@ -114,6 +122,11 @@ public class DailyLogger {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		for(MessageData messageData : messageQueue){
+			messageList.add(messageData);
+		}
+		messageQueue.clear();
+		isSaving = false;
 	}
 	
 	/**

@@ -1,5 +1,11 @@
 package message;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,6 +14,13 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+
+import javax.imageio.ImageIO;
+import javax.swing.JLabel;
+
+import org.scilab.forge.jlatexmath.TeXConstants;
+import org.scilab.forge.jlatexmath.TeXFormula;
+import org.scilab.forge.jlatexmath.TeXIcon;
 
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.User;
@@ -141,6 +154,16 @@ public class MessageProcessor extends Thread{
 			s = s.substring(4);
 			return fileProcessor.getFilesInDirectory(s);
 		}
+		else if(s.equalsIgnoreCase("randomimage")){
+			File image = fileProcessor.getRandomFile();
+			
+			if(message != null){
+				message.replyFile(image, image.getName());
+			}else{
+				channel.sendFile(image, image.getName());
+			}
+			return null;
+		}
 		else if(s.length() >= 12+1 && s.substring(0,12).equals("randomimage ")){
 			s = s.substring(12);
 			
@@ -174,7 +197,7 @@ public class MessageProcessor extends Thread{
 			String fileName = s.substring(s.indexOf(" ")+1);
 
 			fileProcessor.removeFile(folderName, fileName);
-			return "removed image " + folderName + "/" + fileName;
+			return "removed image " + folderName + "\\" + fileName;
 		}
 		//special cases
         else if(s.equalsIgnoreCase("help") || s.equalsIgnoreCase("help2")){
@@ -183,7 +206,8 @@ public class MessageProcessor extends Thread{
         			+ "Bot info:\n"
         			+ "    help\n"
         			+ "    help2 (broadcasts to channel)\n"
-        			+ "    status\n\n"
+        			+ "    status\n"
+        			+ "    github\n\n"
         			+ "Utilities:\n"
         			+ "    pickuser\n"
         			+ "    diceroll\n"
@@ -192,7 +216,8 @@ public class MessageProcessor extends Thread{
         			+ "    pick [arg0] [arg1] ...\n"
         			+ "    spam [arg0] [arg1] ...\n"
         			+ "    google [query]\n"
-        			+ "    stackoverflow [query]\n\n"
+        			+ "    stackoverflow [query]\n"
+        			+ "    latex [equation]\n\n"
         			+ "Logging:\n"
         			+ "    log\n"
         			+ "    logdate [yyyy-mm-dd]\n"
@@ -203,6 +228,7 @@ public class MessageProcessor extends Thread{
         			+ "    upload [directory] [filename]   (Attach file to be uploaded)\n"
         			+ "    getimage [directory] [filename]\n"
         			+ "    removeimage [directory] [filename]\n"
+        			+ "    randomimage\n"
         			+ "    randomimage [directory]\n"
         			+ "    dir [directory]\n"
         			+ "    imagelist\n\n"
@@ -230,6 +256,13 @@ public class MessageProcessor extends Thread{
         			+ "    Require mention: " + requireMention + "\n"
         			+ "Notify on edit: " + rainbot.editListener.isActive + "\n"
         			+ "Notify on delete: " + rainbot.deleteListener.isActive + "\n");
+        	if(message != null){
+        		message.delete();
+        	}
+        	return null;
+        }
+        else if(s.equalsIgnoreCase("github")){
+        	author.sendMessage("https://github.com/Tetragonal/Rainbot");
         	if(message != null){
         		message.delete();
         	}
@@ -323,6 +356,32 @@ public class MessageProcessor extends Thread{
         else if(s.equalsIgnoreCase("useractivity")){
         	return rainbot.createListener.dailyLogger.getUserActivity(channel);
         }
+        else if(s.length() >= 6 && s.substring(0,6).equals("latex ")){
+        	String latex = s.substring(6);
+        	TeXFormula formula = new TeXFormula(latex);
+        	TeXIcon icon = formula.new TeXIconBuilder().setStyle(TeXConstants.STYLE_DISPLAY).setSize(20).build();
+        	icon.setInsets(new Insets(5, 5, 5, 5));
+        	BufferedImage image = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        	Graphics2D g2 = image.createGraphics();
+        	g2.setColor(Color.white);
+        	g2.fillRect(0,0,icon.getIconWidth(),icon.getIconHeight());
+        	JLabel jl = new JLabel();
+        	jl.setForeground(new Color(0, 0, 0));
+        	icon.paintIcon(jl, g2, 0, 0);
+        	ByteArrayOutputStream os = new ByteArrayOutputStream();
+	   		try {
+				ImageIO.write(image, "png", os);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+	   		InputStream is = new ByteArrayInputStream(os.toByteArray());
+
+			if(message != null){
+				message.replyFile(is, "test.png", latex);
+			}else{
+				channel.sendFile(is, "test.png", latex);
+			}
+        }
 		
 		//parse if js if not a command
         else if(jsEnabled){
@@ -355,10 +414,6 @@ public class MessageProcessor extends Thread{
     				queueMessage(message.getChannelReceiver(), result);
     			}
     		}
-    		//special cases
-//			if (message.getContent().matches("[A-Z^\\s+$]+") && message.getContent().length() >= 4){
-//	        	queueMessage(message.getChannelReceiver(), "pls no caps lock");
-//	        }
 		}
 	}
 	

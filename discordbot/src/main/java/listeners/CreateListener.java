@@ -34,12 +34,13 @@ public class CreateListener implements MessageCreateListener{
     	if(message.getUserReceiver() != null && !message.getAuthor().equals(api.getYourself())){ //pm
     			message.getUserReceiver().sendMessage(messageProcessor.parseCommand(message.getContent(), null, message.getUserReceiver(), message));
     	}
-    	messageProcessor.receiveMessage(message);
-    	dailyLogger.addMessage(message);
-    	
     	//log messages to console.log
-    	if(message.getChannelReceiver() != null && message.getChannelReceiver().equals(parentWindow.getCurrentChannel())){
-    		parentWindow.addToConsoleLog("[" + message.getAuthor().getName() + "#" + message.getAuthor().getDiscriminator() + "] " + message.getContent());
+    	if(message.getChannelReceiver() != null){
+        	messageProcessor.receiveMessage(message);
+        	dailyLogger.addMessage(message);
+        	if(message.getChannelReceiver().equals(parentWindow.getCurrentChannel())){
+        		parentWindow.addToConsoleLog("[" + message.getAuthor().getName() + "#" + message.getAuthor().getDiscriminator() + "] " + message.getContent());
+    		}
     	}    	
     }
     
