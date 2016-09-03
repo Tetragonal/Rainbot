@@ -1,12 +1,16 @@
 package message;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import de.btobastian.javacord.entities.message.MessageAttachment;
 
@@ -17,7 +21,7 @@ public class FileProcessor {
 	}
 
 	public boolean addFile(String directoryName, String fileName, MessageAttachment messageAttachment){ //inputstream
-		if(getFileWithName(directoryName, fileName) == null){
+		if(getFullFilename(directoryName, fileName) == null){
 			directoryName = checkDirectory(directoryName);
 			InputStream in;
 			try {
@@ -61,7 +65,7 @@ public class FileProcessor {
 	
 	public void removeFile(String directoryName, String fileName){
 		directoryName = checkDirectory(directoryName);
-		fileName = getFileWithName(directoryName, fileName);
+		fileName = getFullFilename(directoryName, fileName);
 		//create directory
 		File fileToDelete = new File("img/" + directoryName + "/" + fileName);
 		fileToDelete.delete();
@@ -113,7 +117,7 @@ public class FileProcessor {
 	
 	public File getFile(String directoryName, String fileName){
 		directoryName = checkDirectory(directoryName);
-		fileName = getFileWithName(directoryName, fileName);
+		fileName = getFullFilename(directoryName, fileName);
 		directoryName = checkDirectory(directoryName);
 		String localPath = null;
 		 try {
@@ -143,6 +147,43 @@ public class FileProcessor {
 		return list;
 	}
 	
+	public ArrayList<InputStream> getZippedFolders(String directoryName){
+		directoryName = checkDirectory(directoryName);
+		ArrayList<InputStream> zippedFolderList = new ArrayList<InputStream>();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try{
+			ZipOutputStream zos = new ZipOutputStream(baos);
+			String localPath = new File("").getCanonicalPath();
+			File directory = new File(localPath + "/img/" + directoryName);
+			File[] imgArray = new File(directory.getAbsolutePath()).listFiles();
+			int byteCounter = 0;
+			for(File img : imgArray){
+		        byte[] bFile = new byte[(int) img.length()];
+		        //check if zip will exceed 10mb filesize limit, make new zip if it will
+			    if(byteCounter + (int) img.length() >= 8388608){
+			    	zos.close();
+			    	zippedFolderList.add(new ByteArrayInputStream(baos.toByteArray()));
+			    	baos = new ByteArrayOutputStream();
+			    	zos = new ZipOutputStream(baos);
+			    	byteCounter = 0;
+		    	}
+	            //convert file into array of bytes
+			    FileInputStream fileInputStream = new FileInputStream(img);
+			    fileInputStream.read(bFile);
+			    fileInputStream.close();
+			    zos.putNextEntry(new ZipEntry(img.getName()));
+			    zos.write(bFile);
+			    byteCounter += bFile.length;
+			    zos.closeEntry();
+			}
+			zos.close();
+			zippedFolderList.add(new ByteArrayInputStream(baos.toByteArray()));
+		} catch(IOException e) {
+			e.printStackTrace();
+	    }
+		return zippedFolderList;
+	}
+	
 	public String getFileList(){
 		String list = "";
 		String localPath = null;
@@ -168,7 +209,7 @@ public class FileProcessor {
 		return directoryName.replace("../", "").replace("/", "").replace("\\", "");
 	}
 	
-	public String getFileWithName(String directoryName, String fileName){
+	public String getFullFilename(String directoryName, String fileName){
 		String localPath = null;
 		String fullFileName = null;
 		 try {
@@ -177,7 +218,6 @@ public class FileProcessor {
 			e.printStackTrace();
 		}
 		
-		 
 		File directory = new File(localPath + "/img/" + directoryName);
 		File[] files = null;
 		if(directory.exists()){
@@ -186,12 +226,7 @@ public class FileProcessor {
 		
 		for(File file : files){
 			if(file.getName().substring(0, file.getName().lastIndexOf(".")).equals(fileName)){
-				String extension = "";
-				int i = file.getName().lastIndexOf('.');
-				if (i >= 0) {
-				    extension = file.getName().substring(i+1);
-				}
-				fullFileName = fileName + "." + extension;
+				fullFileName = file.getName();
 			}	
 		}
 		return fullFileName;

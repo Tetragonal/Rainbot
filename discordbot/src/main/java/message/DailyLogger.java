@@ -117,6 +117,7 @@ public class DailyLogger {
 		try {
 			obj_out = new ObjectOutputStream (f_out);
     	// Write object out to disk
+			System.out.println("saving " + messageList.size() + " messages");
 			obj_out.writeObject ( messageList );
 			obj_out.close();
 		} catch (IOException e) {
@@ -165,11 +166,15 @@ public class DailyLogger {
 		return new Object[]{stream, logCount};
 	}
 	
-	
-	public String getUserActivity(Channel channel){		
+	/**
+	 * Gets messages sent per user in a channel
+	 * @param channel
+	 * @return table containing list of users/message count/%
+	 */
+	public String getMessageCount(Channel channel){		
     	Calendar calendar = Calendar.getInstance();
     	String activityReport = ""
-    			+ "User activity for today in #" + channel.getName() + ":\n\n"
+    			+ "User activity (message count) for today in " + channel.getMentionTag() + ":\n\n"
     			+ "```\n"
     			+ String.format("%1$-25s", "Username:") 
     			+ String.format("%1$-8s", "#:") 
@@ -225,6 +230,86 @@ public class DailyLogger {
 		activityReport = activityReport + "\n```\nTotal message count: " + messageCount + " (" + fmt.format(messageCount/minutes) + " messages per minute)\n";
 		return activityReport;
 		
+	}
+	
+	/**
+	 * Gets amount of letters sent per user in a channel
+	 * @param channel
+	 * @return table containing list of users/letter count/%/letters per message
+	 */
+	public String getLetterCount(Channel channel){		
+    	Calendar calendar = Calendar.getInstance();
+    	String activityReport = ""
+    			+ "User activity (letter count) for today in " + channel.getMentionTag() + ":\n\n"
+    			+ "```\n"
+    			+ String.format("%1$-25s", "Username:") 
+    			+ String.format("%1$-7s", "#:") 
+    			+ String.format("%1$-7s", "%:")
+    			+ String.format("%1$-7s", "#/msg:")
+    			+ "type:"
+				+ "\n";
+		
+		//calendar doesn't convert properly on its own, so using this for now
+    	float minutes = 60*calendar.get(Calendar.HOUR_OF_DAY) + calendar.get(Calendar.MINUTE);
+    	
+		TreeMap<String, Integer> letterCountMap = new TreeMap<String, Integer>(); //userID, letterCount
+		//create user activity map
+		int letterCount = 0;
+		for(MessageData messageData : messageList){
+			if(messageData.channelReceiverID.equals(channel.getId())){
+				//don't count spaces or anything enclosed in ``` ```
+				String modifiedContent = messageData.messageContent.replace(" ","");
+				while(modifiedContent.indexOf("```") != -1 && modifiedContent.substring(modifiedContent.indexOf("```")+3).indexOf("```") != -1){
+					modifiedContent = modifiedContent.substring(0, modifiedContent.indexOf("```")) + modifiedContent.substring(modifiedContent.indexOf("```")+3 + modifiedContent.substring(modifiedContent.indexOf("```")+3).indexOf("```")+3);
+				}
+				if(letterCountMap.containsKey(messageData.authorID)){
+					letterCountMap.put(messageData.authorID, letterCountMap.get(messageData.authorID) + modifiedContent.length());
+				}else{
+					letterCountMap.put(messageData.authorID, modifiedContent.length());
+				}
+				letterCount += modifiedContent.length();
+			}
+		}
+		
+		TreeMap<String, Integer> messageCountMap = new TreeMap<String, Integer>(); //userID, messagesSent
+		//create message count map
+		for(MessageData messageData : messageList){
+			if(messageData.channelReceiverID.equals(channel.getId())){
+				if(messageCountMap.containsKey(messageData.authorID)){
+					messageCountMap.put(messageData.authorID, messageCountMap.get(messageData.authorID) + 1);
+				}else{
+					messageCountMap.put(messageData.authorID, 1);
+				}
+			}
+		}
+		
+		
+		DecimalFormat fmt = new DecimalFormat ("0.00");
+		//sort users based on messages sent
+		Map<String, Integer> sortedMap = sortByComparator(letterCountMap);
+		//print stuff based on map		
+		for(String userID : sortedMap.keySet()){
+			Future<User> futureUser =  rainbot.getImplDiscordAPI().getUserById(userID);
+			User user = null;
+			try {
+				user = futureUser.get();
+			} catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
+			
+			activityReport += ""
+					+ String.format("%1$-25s", user.getName() + "#" + user.getDiscriminator())
+					+ String.format("%1$-7s", letterCountMap.get(userID)) 
+					+ String.format("%1$-7s", fmt.format((100.0*letterCountMap.get(userID)/letterCount)))
+					+ String.format("%1$-7s", fmt.format((double)letterCountMap.get(userID)/messageCountMap.get(userID)));
+			if(user.isBot()){
+				 activityReport += "bot";
+			}
+			activityReport += "\n";
+		}
+		
+		activityReport = activityReport + "\n```\nTotal word count: " + letterCount + " (" + fmt.format(letterCount/minutes) + " letters per minute)\n";
+		return activityReport;
 	}
 	
 	

@@ -38,10 +38,12 @@ public class MessageProcessor extends Thread{
 	
 	private Rainbot rainbot;
 	private FileProcessor fileProcessor;
+	private PasteProcessor pasteProcessor;
 	
 	public MessageProcessor(Rainbot rainbot){
 		 this.rainbot = rainbot;
 		 fileProcessor = new FileProcessor();
+		 pasteProcessor = new PasteProcessor();
 	}
 	
 	public void run() {
@@ -83,25 +85,25 @@ public class MessageProcessor extends Thread{
 			}while (randomUser.isYourself());
 			return "I choose " + randomUser.getName()+ "#" + randomUser.getDiscriminator();	
 		}
-		else if (s.length() >= 7 && s.substring(0,7).equals("google ")){
+		else if (s.startsWith("google ")){
 			s = s.substring(7);
 			s = s.replace(" ", "%20");
 			return "https://www.google.com/search?q=" + s + "&btnI";
-		}else if (s.length() >= 14 && s.substring(0,14).equals("stackoverflow ")){
+		}else if (s.startsWith("stackoverflow ")){
 			s = s.substring(14);
 			s = s.replace(" ", "+");
 			return "http://stackoverflow.com/search?q=" + s;
 		}
-		else if(s.length() >= 5 && s.substring(0,5).equals("pick ")){
+		else if(s.startsWith("pick ")){
 			s = s.substring(5);
 			String[] sArray = s.split(" ");
 			return "I choose " + sArray[(int)(Math.random()*sArray.length)];
 		}
-		else if(s.length() >= 5 && s.substring(0,5).equals("rate ")){
+		else if(s.startsWith("rate ")){
 			s = s.substring(5);
 			return "I rate " + s + " " + ((int)(Math.random()*10) + 1) + "/10";
 		}
-		else if(s.length() >= 5 && s.substring(0,5).equals("spam ")){
+		else if(s.startsWith("spam ")){
 			s = s.substring(5);
 			String[] sArray = s.split(" ");
 			String spam = "";
@@ -142,7 +144,7 @@ public class MessageProcessor extends Thread{
 			MessageAttachment messageAttachment = message.getAttachments().iterator().next();
 			boolean addedFile = fileProcessor.addFile(folderName, fileName, messageAttachment);
 			if(addedFile){
-		    	return "uploaded img \"" + fileName + "\"";
+		    	return "uploaded img \"" + fileProcessor.getFullFilename(folderName, fileName) + "\"";
 			}else{
 				return "Upload failed";
 			}
@@ -150,7 +152,7 @@ public class MessageProcessor extends Thread{
 		else if(s.equalsIgnoreCase("imagelist")){
 			return fileProcessor.getFileList();
 		}
-		else if(s.length() >= 4 && s.substring(0,4).equals("dir ")){
+		else if(s.startsWith("dir ")){
 			s = s.substring(4);
 			return fileProcessor.getFilesInDirectory(s);
 		}
@@ -164,7 +166,7 @@ public class MessageProcessor extends Thread{
 			}
 			return null;
 		}
-		else if(s.length() >= 12+1 && s.substring(0,12).equals("randomimage ")){
+		else if(s.startsWith("randomimage ")){
 			s = s.substring(12);
 			
 			File image = fileProcessor.getRandomFile(s);
@@ -176,7 +178,7 @@ public class MessageProcessor extends Thread{
 			}
 			return null;
 		}
-		else if (s.length() >= 9+1 && s.substring(0,9).equals("getimage ")){
+		else if (s.startsWith("getimage ")){
 			s = s.substring(9);
 			
 			String folderName = s.substring(0, s.indexOf(" "));
@@ -190,16 +192,33 @@ public class MessageProcessor extends Thread{
 			}	
 	    	return null;
 		}
-		else if (s.length() >= 12+1 && s.substring(0,12).equals("removeimage ")){
+		else if(s.startsWith("getfolder ")){
+			s = s.substring(10);
+			ArrayList<InputStream> zippedFolderList = fileProcessor.getZippedFolders(s);
+			for(int i=0; i<zippedFolderList.size(); i++){
+				if(message != null){
+					message.replyFile(zippedFolderList.get(i), s+"-"+i+".zip");
+				}else{
+					channel.sendFile(zippedFolderList.get(i), s+"-"+i+".zip");
+				}
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+	    	return null;
+		}
+		else if (s.startsWith("removeimage ")){
 			s = s.substring(12);
 			
 			String folderName = s.substring(0, s.indexOf(" "));
 			String fileName = s.substring(s.indexOf(" ")+1);
-
+			String fullFileName = fileProcessor.getFullFilename(folderName, fileName);
 			fileProcessor.removeFile(folderName, fileName);
-			return "removed image " + folderName + "\\" + fileName;
+			return "removed " + folderName + "\\" + fullFileName;
 		}
-		//special cases
         else if(s.equalsIgnoreCase("help") || s.equalsIgnoreCase("help2")){
         	String helpString = ""
         			+ "`help`\n\n"
@@ -217,16 +236,19 @@ public class MessageProcessor extends Thread{
         			+ "    spam [arg0] [arg1] ...\n"
         			+ "    google [query]\n"
         			+ "    stackoverflow [query]\n"
-        			+ "    latex [equation]\n\n"
+        			+ "    latex [equation]\n"
+        			+ "    paste[language] [content] (e.g. 'pastejava')\n\n"
         			+ "Logging:\n"
         			+ "    log\n"
         			+ "    logdate [yyyy-mm-dd]\n"
         			+ "    find [text]\n"
         			+ "    finddate [yyyy-mm-dd] [text]\n"
-        			+ "    useractivity\n\n"
+        			+ "    useractivity  (message count)\n"
+        			+ "    useractivity2 (word count)\n\n"
         			+ "Image/File hosting:\n"
         			+ "    upload [directory] [filename]   (Attach file to be uploaded)\n"
         			+ "    getimage [directory] [filename]\n"
+        			+ "    getfolder [directory]\n"
         			+ "    removeimage [directory] [filename]\n"
         			+ "    randomimage\n"
         			+ "    randomimage [directory]\n"
@@ -314,7 +336,7 @@ public class MessageProcessor extends Thread{
 			}
 			return null;
 		}
-        else if(s.length() >= 3 && s.equalsIgnoreCase("log")){
+        else if(s.equalsIgnoreCase("log")){
         	Object[] logResults = rainbot.createListener.dailyLogger.getLog(channel);
         	InputStream logStream = (InputStream) logResults[0];
         	int messageCount = (int) logResults[1];
@@ -333,7 +355,7 @@ public class MessageProcessor extends Thread{
         	return null;
         }
 		
-        else if(s.length() >= 8 && s.substring(0,8).equals("logdate ")){
+        else if(s.startsWith("logdate ")){
 			s = s.substring(8);
         	DailyLogger dailyLogger = getDailyLogger(s);
         	Object[] logResults = dailyLogger.getLog(channel);
@@ -354,9 +376,12 @@ public class MessageProcessor extends Thread{
         	return null;
         }
         else if(s.equalsIgnoreCase("useractivity")){
-        	return rainbot.createListener.dailyLogger.getUserActivity(channel);
+        	return rainbot.createListener.dailyLogger.getMessageCount(channel);
         }
-        else if(s.length() >= 6 && s.substring(0,6).equals("latex ")){
+        else if(s.equalsIgnoreCase("useractivity2")){
+        	return rainbot.createListener.dailyLogger.getLetterCount(channel);
+        }
+        else if(s.startsWith("latex ")){
         	String latex = s.substring(6);
         	TeXFormula formula = new TeXFormula(latex);
         	TeXIcon icon = formula.new TeXIconBuilder().setStyle(TeXConstants.STYLE_DISPLAY).setSize(20).build();
@@ -377,11 +402,24 @@ public class MessageProcessor extends Thread{
 	   		InputStream is = new ByteArrayInputStream(os.toByteArray());
 
 			if(message != null){
-				message.replyFile(is, "test.png", latex);
+				message.replyFile(is, "equation.png", latex);
 			}else{
-				channel.sendFile(is, "test.png", latex);
+				channel.sendFile(is, "equation.png", latex);
 			}
-        }
+        }else if(s.startsWith("paste")){
+        	s = s.substring(5);
+        	String language = s.substring(0,s.indexOf(" "));
+        	s = s.substring(s.indexOf(" ") + 1);
+        	if(message != null){
+        		if(message.getChannelReceiver().getServer() != null){
+	        		String nickname = author.getNick(message.getChannelReceiver().getServer());
+	            	message.delete();
+	        		return "`" + nickname + "'s paste`\n" + pasteProcessor.createPaste(language, nickname, s);
+        		}else return pasteProcessor.createPaste(language, author.getName(), s);
+        	}else{
+        		return pasteProcessor.createPaste(language, "paste" , s);
+        	}
+    	}
 		
 		//parse if js if not a command
         else if(jsEnabled){

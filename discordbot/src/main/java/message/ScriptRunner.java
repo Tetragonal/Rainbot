@@ -20,7 +20,7 @@ public class ScriptRunner implements Runnable{
 	        // create a JavaScript engine
 	        ScriptEngine engine = factory.getEngineByName("JavaScript");
 	        // evaluate JavaScript code from String
-	        if(!script.contains("exit()")){
+	        if(!script.contains("exit(")){
 	        	result = engine.eval(script).toString();
 	        }else{
 	            result = null;
