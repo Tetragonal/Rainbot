@@ -13,11 +13,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import de.btobastian.javacord.entities.message.MessageAttachment;
+import window.Window;
 
 public class FileProcessor {
 	
 	public FileProcessor(){
 		System.setProperty("http.agent", "Chrome");
+		System.out.println("Jar location: " + Window.getJarLocation());
 	}
 
 	public boolean addFile(String directoryName, String fileName, MessageAttachment messageAttachment){ //inputstream
@@ -44,9 +46,9 @@ public class FileProcessor {
 				    extension = messageAttachment.getFileName().substring(i+1);
 				}
 				//create directory
-				new File("img/" + directoryName).mkdir();
+				new File(Window.getJarLocation() + "/img/" + directoryName).mkdir();
 				//write file
-				FileOutputStream fos = new FileOutputStream("img/" + directoryName + "/" + fileName + "." + extension);
+				FileOutputStream fos = new FileOutputStream(Window.getJarLocation() + "/img/" + directoryName + "/" + fileName + "." + extension);
 				fos.write(response);
 				fos.close();
 				return true;
@@ -54,7 +56,7 @@ public class FileProcessor {
 				//check if no files in directory
 				String directory = getFilesInDirectory(directoryName);
 				if(directory.equals(directoryName + "\n")){
-					File directoryToDelete = new File("img/" + directoryName);
+					File directoryToDelete = new File(Window.getJarLocation() + "/img/" + directoryName);
 					directoryToDelete.delete();
 				}
 				e1.printStackTrace();
@@ -67,29 +69,22 @@ public class FileProcessor {
 		directoryName = checkDirectory(directoryName);
 		fileName = getFullFilename(directoryName, fileName);
 		//create directory
-		File fileToDelete = new File("img/" + directoryName + "/" + fileName);
+		File fileToDelete = new File(Window.getJarLocation() + "/img/" + directoryName + "/" + fileName);
 		fileToDelete.delete();
 		
 		//check if no files in directory
 		String directory = getFilesInDirectory(directoryName);
 		if(directory.equals(directoryName + "\n")){
-			File directoryToDelete = new File("img/" + directoryName);
+			File directoryToDelete = new File(Window.getJarLocation() + "/img/" + directoryName);
 			directoryToDelete.delete();
 		}
 	}
 	
 	public File getRandomFile(){
 		//make list of all file locations in \img\
-		String localPath = null;
-		 try {
-			 localPath = new File("").getCanonicalPath();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		 
 		ArrayList<File> imgList = new ArrayList<File>(); 
 		 
-		File[] dirList = new File(localPath + "/img").listFiles();
+		File[] dirList = new File(Window.getJarLocation() + "/img").listFiles();
 		for(File directory : dirList){
 			File[] tempImgList = new File(directory.getAbsolutePath()).listFiles();
 			for(File img : tempImgList)
@@ -102,13 +97,7 @@ public class FileProcessor {
 		directoryName = checkDirectory(directoryName);
 		
 		//make list of all file locations in directory
-		String localPath = null;
-		 try {
-			 localPath = new File("").getCanonicalPath();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		File directory = new File(localPath + "/img/" + directoryName);
+		File directory = new File(Window.getJarLocation() + "/img/" + directoryName);
 		File[] imgArray = new File(directory.getAbsolutePath()).listFiles();
 		
 		//pick a random file
@@ -119,29 +108,17 @@ public class FileProcessor {
 		directoryName = checkDirectory(directoryName);
 		fileName = getFullFilename(directoryName, fileName);
 		directoryName = checkDirectory(directoryName);
-		String localPath = null;
-		 try {
-			 localPath = new File("").getCanonicalPath();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		File requestedFile = new File(localPath + "/img/" + directoryName + "/" + fileName);
+		File requestedFile = new File(Window.getJarLocation() + "/img/" + directoryName + "/" + fileName);
 		return requestedFile;	
 	}
 	
 	public String getFilesInDirectory(String directoryName){
 		directoryName = checkDirectory(directoryName);
 		String list = directoryName + "\n";
-		String localPath = null;
-		 try {
-			 localPath = new File("").getCanonicalPath();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		File directory = new File(localPath + "/img/" + directoryName);
+		File directory = new File(Window.getJarLocation() + "/img/" + directoryName);
 		File[] imgArray = new File(directory.getAbsolutePath()).listFiles();
 		for(File img : imgArray){
-			String imgName = img.getAbsolutePath().substring((localPath + "/img/" + directoryName + "/").length());
+			String imgName = img.getAbsolutePath().substring((Window.getJarLocation() + "/img/" + directoryName + "/").length());
 			list += "    " + imgName + "\n";
 		}
 		return list;
@@ -153,8 +130,7 @@ public class FileProcessor {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try{
 			ZipOutputStream zos = new ZipOutputStream(baos);
-			String localPath = new File("").getCanonicalPath();
-			File directory = new File(localPath + "/img/" + directoryName);
+			File directory = new File(Window.getJarLocation() + "/img/" + directoryName);
 			File[] imgArray = new File(directory.getAbsolutePath()).listFiles();
 			int byteCounter = 0;
 			for(File img : imgArray){
@@ -186,19 +162,13 @@ public class FileProcessor {
 	
 	public String getFileList(){
 		String list = "";
-		String localPath = null;
-		 try {
-			 localPath = new File("").getCanonicalPath();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		File[] directories = new File(localPath + "/img").listFiles(File::isDirectory);
+		File[] directories = new File(Window.getJarLocation() + "/img").listFiles(File::isDirectory);
 		for(File directory : directories){
-			String directoryName = directory.getAbsolutePath().substring((localPath + "/img/").length()); //relative path
+			String directoryName = directory.getAbsolutePath().substring((Window.getJarLocation() + "/img/").length()); //relative path
 			list += directoryName + "\n";
 			File[] imgArray = new File(directory.getAbsolutePath()).listFiles();
 			for(File img : imgArray){
-				String imgName = img.getAbsolutePath().substring((localPath + "/img/" + directoryName + "/").length());
+				String imgName = img.getAbsolutePath().substring((Window.getJarLocation() + "/img/" + directoryName + "/").length());
 				list += "    " + imgName + "\n";
 			}
 		}
@@ -210,15 +180,9 @@ public class FileProcessor {
 	}
 	
 	public String getFullFilename(String directoryName, String fileName){
-		String localPath = null;
 		String fullFileName = null;
-		 try {
-			 localPath = new File("").getCanonicalPath();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 		
-		File directory = new File(localPath + "/img/" + directoryName);
+		File directory = new File(Window.getJarLocation() + "/img/" + directoryName);
 		File[] files = null;
 		if(directory.exists()){
 			files = directory.listFiles();
@@ -231,5 +195,4 @@ public class FileProcessor {
 		}
 		return fullFileName;
 	}
-	
 }

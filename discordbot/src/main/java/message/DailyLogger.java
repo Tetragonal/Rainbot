@@ -30,6 +30,7 @@ import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.User;
 import de.btobastian.javacord.entities.message.Message;
 import discordbot.Rainbot;
+import window.Window;
 
 public class DailyLogger {
 	public ArrayList<MessageData> messageList = new ArrayList<MessageData>();
@@ -85,9 +86,9 @@ public class DailyLogger {
 		  try {
 			  FileInputStream inputFileStream;
 			  if(logName == null){
-				  inputFileStream = new FileInputStream("./logs/" + sdf.format(currentDate) + ".log");
+				  inputFileStream = new FileInputStream(Window.getJarLocation() + "/logs/" + sdf.format(currentDate) + ".log");
 			  }else{
-				  inputFileStream = new FileInputStream("./logs/" + logName + ".log");
+				  inputFileStream = new FileInputStream(Window.getJarLocation() + "/logs/" + logName + ".log");
 			  }
 		      ObjectInputStream objectInputStream = new ObjectInputStream(inputFileStream);
 		      messageList = (ArrayList<MessageData>)objectInputStream.readObject();
@@ -108,7 +109,7 @@ public class DailyLogger {
     	// Write to disk with FileOutputStream
     	FileOutputStream f_out = null;    	
 		try {
-			f_out = new FileOutputStream("./logs/" + sdf.format(currentDate) + ".log");
+			f_out = new FileOutputStream(Window.getJarLocation() + "/logs/" + sdf.format(currentDate) + ".log");
 		} catch (FileNotFoundException e2) {
 			e2.printStackTrace();
 		}

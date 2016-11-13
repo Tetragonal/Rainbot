@@ -64,7 +64,6 @@ public class Rainbot {
 	            	parentWindow.addToConsoleLog("Logged in as bot user: " + api.getYourself().getName() + "#" + api.getYourself().getDiscriminator());
 	            	parentWindow.updateServerComboBox();
 	            	createListener.createTimers();
-	            	
 	        		loadOfflineMessages();
             	}
 	            public void onFailure(Throwable t) {
@@ -73,7 +72,7 @@ public class Rainbot {
 	            }
 	        });
 		}else{
-			System.out.println("Didn't do anything, already connected.");
+			parentWindow.addToConsoleLog("Didn't do anything, already connected.");
 		}
 	}
 	
@@ -96,7 +95,7 @@ public class Rainbot {
         	parentWindow.updateServerComboBox();
         	parentWindow.addToConsoleLog("Disconnected from account.");
 		}else{
-			System.out.println("Didn't do anything, not already connected.");
+			parentWindow.addToConsoleLog("Didn't do anything, not already connected.");
 		}
 	}
 	
@@ -156,9 +155,10 @@ public class Rainbot {
 					}
 				}
 				dailyLogger.saveMessageList();
+				createListener.dailyLogger.loadMessageList();
 			} catch (InterruptedException | ExecutionException e) {
 				e.printStackTrace();
-			}				
+			}	
 		}
 	}
 }

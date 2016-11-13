@@ -7,13 +7,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 
+import window.Window;
+
 public class RainbotProperties {
 	Properties prop = new Properties();
 	public String getProperty(String key){
 		String property = null;
 		InputStream input = null;
 		try {
-			input = new FileInputStream("config.properties");
+			input = new FileInputStream(Window.getJarLocation() + "/config.properties");
 			prop.load(input);
 			property = prop.getProperty(key);
 		} catch (IOException e) {
@@ -34,7 +36,7 @@ public class RainbotProperties {
 		OutputStream output = null;
 
 		try {
-			output = new FileOutputStream("config.properties");
+			output = new FileOutputStream(Window.getJarLocation() + "/config.properties");
 			// set the properties value
 			prop.setProperty(key, value);
 			// save properties to project root folder
@@ -56,7 +58,7 @@ public class RainbotProperties {
 		OutputStream output = null;
 		
 		try {
-			output = new FileOutputStream("config.properties");
+			output = new FileOutputStream(Window.getJarLocation() + "/config.properties");
 			//remove property
 			prop.remove(key);
 			// save properties to project root folder

@@ -18,7 +18,7 @@ public class DeleteListener implements MessageDeleteListener{
 	    		calendar.add(Calendar.HOUR, 1);
 	    	}
 	    	Date timestamp = calendar.getTime();
-			message.reply(message.getAuthor().getName() + "#" + message.getAuthor().getDiscriminator() + "'s message was deleted.\nOriginal comment (" + timestamp + "):\n     " + message.getContent());
+			message.reply("`" + message.getAuthor().getName() + "#" + message.getAuthor().getDiscriminator() + "`'s message was deleted.\nOriginal message (" + timestamp + "):```" + message.getContent() + "```");
 		}
 	}
 }

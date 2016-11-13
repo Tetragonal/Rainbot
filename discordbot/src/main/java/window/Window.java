@@ -31,6 +31,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
 import de.btobastian.javacord.entities.Channel;
@@ -41,11 +42,16 @@ import discordbot.RainbotProperties;
 
 public class Window extends JFrame {
 
+	/*
+		Turn on debug mode when compiling in eclipse/without a jar
+	*/
+	public static boolean debugMode;
+	
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 	private JTextField tokenField;
-	private Rainbot rainbot = new Rainbot(this);
-	private static RainbotProperties rainbotProperties = new RainbotProperties();
+	private Rainbot rainbot;
+	private static RainbotProperties rainbotProperties;
 	
 	private JProgressBar connectedBar;
 	private JLabel lblUser;
@@ -75,8 +81,15 @@ public class Window extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Window frame = new Window();
+					Window frame;
+					if(args.length > 0 && args[0].equals("debug")){
+						frame = new Window(true);
+					}
+					else{
+						frame = new Window(false);
+					}
 					frame.setVisible(true);
+					frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 					if(rainbotProperties.getProperty("saveProperties") != null && rainbotProperties.getProperty("saveProperties").equals("true")){
 						frame.getProperties();
 					}
@@ -86,10 +99,28 @@ public class Window extends JFrame {
 			}
 		});
 	}
+	
+	public static String getJarLocation(){
+		if(Window.debugMode == true){
+			return System.getProperty("user.dir");
+		}
+		else{
+		    String jarLocation = Window.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+		    jarLocation = jarLocation.substring(0, jarLocation.lastIndexOf("/"));
+		    jarLocation = jarLocation.replaceAll("%20"," ");
+		    return jarLocation;
+		}
+	}
+	
 	/**
 	 * Create the frame.
 	 */
-	public Window() {
+	public Window(boolean runInDebugMode) {
+		Window.debugMode = runInDebugMode;
+		
+		rainbot = new Rainbot(this);
+		rainbotProperties = new RainbotProperties();
+		
 		setTitle("Rainbot Discord client");
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -491,7 +522,7 @@ public class Window extends JFrame {
 	}
 	
 	public void saveToLog(String text) throws Exception {
-	   FileOutputStream out = new FileOutputStream("console.log", true);
+	   FileOutputStream out = new FileOutputStream(Window.getJarLocation() + "/console.log", true);
 	   text = text + "\r\n";
 	   out.write(text.getBytes());
 	   out.close();

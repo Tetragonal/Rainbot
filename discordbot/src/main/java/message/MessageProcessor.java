@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -83,7 +84,7 @@ public class MessageProcessor extends Thread{
 			do{
 				randomUser = users.get((int)(Math.random()*users.size()));
 			}while (randomUser.isYourself());
-			return "I choose " + randomUser.getName()+ "#" + randomUser.getDiscriminator();	
+			return "I choose `" + randomUser.getName()+ "#" + randomUser.getDiscriminator() + "`";	
 		}
 		else if (s.startsWith("google ")){
 			s = s.substring(7);
@@ -120,8 +121,27 @@ public class MessageProcessor extends Thread{
 				return "tails";
 			}
 		}
-		else if(s.equalsIgnoreCase("diceroll")){
-			return ":game_die: "+(int)(Math.random()*6 + 1);
+		else if(s.startsWith("roll")){
+			if(s.equalsIgnoreCase("roll")){
+				return "`1d6` :game_die: " + (int)(Math.random()*6 + 1);
+			}
+			s = s.substring(5);
+			String diceString = "";
+			int total = 0;
+			int A = Integer.parseInt(s.substring(0,s.indexOf("d")));
+			int X = Integer.parseInt(s.substring(s.indexOf("d")+1));
+			diceString += "`"+A+"d"+X + "` :game_die: ";
+			while(A>0){
+				int roll = (int)(Math.random()*X + 1);
+				diceString += roll;
+				total += roll;
+				A--;
+				if(A>0){
+					diceString +=  ", ";
+				}
+			}
+			diceString += "\n`Total: " + total + "`";
+			return diceString;
 		}
 		else if (s.equalsIgnoreCase("ping")) {
 			return "pong";
@@ -229,7 +249,7 @@ public class MessageProcessor extends Thread{
         			+ "    github\n\n"
         			+ "Utilities:\n"
         			+ "    pickuser\n"
-        			+ "    diceroll\n"
+        			+ "    roll [AdX]\n"
         			+ "    coinflip\n"
         			+ "    rate [arg]\n"
         			+ "    pick [arg0] [arg1] ...\n"
@@ -271,13 +291,36 @@ public class MessageProcessor extends Thread{
         	return null;
         }
         else if(s.equalsIgnoreCase("status")){
+        	int time = (int) ManagementFactory.getRuntimeMXBean().getUptime();
+        	time /= 1000;
+        	int seconds = (int) (time % 60);
+        	time /= 60;
+        	int minutes = time % 60;
+        	time /= 60;
+        	int hours = time % 24;
+        	time /= 24;
+        	int days = time;
+        	String uptimeString = "";
+        	if(days > 0){
+        		uptimeString = days + " days, ";
+        	}
+        	if(hours > 0){
+        		uptimeString += hours + " hours, ";
+        	}
+        	if(minutes > 0){
+        		uptimeString += minutes + " minutes, ";
+        	}
+        	uptimeString += seconds + " seconds";
+        	
         	author.sendMessage(""
-        			+ "`status`\n\n"
-        			+ "Enable commands: " + isActive + "\n"
-        			+ "    Enable javascript parser: " + jsEnabled + "\n"
-        			+ "    Require mention: " + requireMention + "\n"
-        			+ "Notify on edit: " + rainbot.editListener.isActive + "\n"
-        			+ "Notify on delete: " + rainbot.deleteListener.isActive + "\n");
+        			+ "`status`\n"
+        			+ "Running on `" + System.getProperty("os.name") + "`\n"
+        			+ "Bot uptime: `" + uptimeString + "`\n\n"
+        			+ "Enable commands: `" + isActive + "`\n"
+        			+ "    Enable javascript parser: `" + jsEnabled + "`\n"
+        			+ "    Require mention: `" + requireMention + "`\n"
+        			+ "Notify on edit: `" + rainbot.editListener.isActive + "`\n"
+        			+ "Notify on delete: `" + rainbot.deleteListener.isActive + "`\n");
         	if(message != null){
         		message.delete();
         	}

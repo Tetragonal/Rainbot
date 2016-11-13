@@ -18,7 +18,7 @@ public class EditListener implements MessageEditListener{
 	    		calendar.add(Calendar.HOUR, 1);
 	    	}
 	    	Date timestamp = calendar.getTime();
-	    	message.reply(message.getAuthor().getName() + "#" + message.getAuthor().getDiscriminator() + " edited their message.\n\n" + "Original message (" + timestamp + "):\n     " + oldContent + "\nEdited message:\n     " + message.getContent());
+	    	message.reply("`" + message.getAuthor().getName() + "#" + message.getAuthor().getDiscriminator() + "` edited their message.\n" + "Original message (" + timestamp + "):\n```" + oldContent + "```Edited message:```" + message.getContent() + "```");
 		}
 	}
 }
