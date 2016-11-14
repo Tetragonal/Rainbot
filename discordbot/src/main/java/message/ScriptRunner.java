@@ -8,15 +8,15 @@ public class ScriptRunner implements Runnable{
 	
 	private String script;
 	private String result;
+	private ScriptEngineManager factory;
 	
-    public ScriptRunner(String script) {
+    public ScriptRunner(String script, ScriptEngineManager factory) {
             this.script = script;
+            this.factory = factory;
     }
 
     public void run() {
         try {
-	        // create a script engine manager
-	        ScriptEngineManager factory = new ScriptEngineManager();
 	        // create a JavaScript engine
 	        ScriptEngine engine = factory.getEngineByName("JavaScript");
 	        // evaluate JavaScript code from String

@@ -17,6 +17,9 @@ import java.util.Date;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import javax.swing.JLabel;
 
 import org.scilab.forge.jlatexmath.TeXConstants;
@@ -40,11 +43,23 @@ public class MessageProcessor extends Thread{
 	private Rainbot rainbot;
 	private FileProcessor fileProcessor;
 	private PasteProcessor pasteProcessor;
+	private ScriptEngineManager factory;
 	
 	public MessageProcessor(Rainbot rainbot){
 		 this.rainbot = rainbot;
 		 fileProcessor = new FileProcessor();
 		 pasteProcessor = new PasteProcessor();
+		 factory = new ScriptEngineManager();
+		 
+		 //for some reason trying to create a ScriptEngine in Scriptrunner.java causes NoClassDefFoundError, doing this somehow prevents it from happening
+	        // create a JavaScript engine
+	        ScriptEngine engine = factory.getEngineByName("JavaScript");
+	        	try {
+					engine.eval("2");
+				} catch (ScriptException e) {
+					e.printStackTrace();
+				}
+
 	}
 	
 	public void run() {
@@ -499,8 +514,9 @@ public class MessageProcessor extends Thread{
 	}
 	
 	public String parseAsJs(String command){
+		
 		String result = "";
-		ScriptRunner scriptRunner = new ScriptRunner(command);
+		ScriptRunner scriptRunner = new ScriptRunner(command, factory);
         try {
             Thread t = new Thread(scriptRunner);
             t.start();
