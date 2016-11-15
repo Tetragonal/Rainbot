@@ -509,7 +509,7 @@ public class Window extends JFrame {
 	
 	public void addToConsoleLog(String text){
 		String s = consoleTextArea.getText();
-		while(s.length() > 50000){
+		while(s.length() > 5000){
 			s = s.substring(s.indexOf("\n", 1));
 		}
 		consoleTextArea.setText(s + "\n" + text);

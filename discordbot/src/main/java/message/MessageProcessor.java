@@ -101,6 +101,11 @@ public class MessageProcessor extends Thread{
 			}while (randomUser.isYourself());
 			return "I choose `" + randomUser.getName()+ "#" + randomUser.getDiscriminator() + "`";	
 		}
+		else if (s.startsWith("say")){
+			s = s.substring(4);
+			message.delete();
+			return s;
+		}
 		else if (s.startsWith("google ")){
 			s = s.substring(7);
 			s = s.replace(" ", "%20");
@@ -172,7 +177,6 @@ public class MessageProcessor extends Thread{
         }
 		else if(s.length() >= 7+1 && s.substring(0,7).equals("upload ") && message.getAttachments().size() > 0){
 			s = s.substring(7);
-			
 			String folderName = s.substring(0, s.indexOf(" "));
 			String fileName = s.substring(s.indexOf(" ")+1);
 			
@@ -272,7 +276,8 @@ public class MessageProcessor extends Thread{
         			+ "    google [query]\n"
         			+ "    stackoverflow [query]\n"
         			+ "    latex [equation]\n"
-        			+ "    paste[language] [content] (e.g. 'pastejava')\n\n"
+        			+ "    paste[language] [content] (e.g. 'pastejava')\n"
+        			+ "    say [text]\n\n"
         			+ "Logging:\n"
         			+ "    log\n"
         			+ "    logdate [yyyy-mm-dd]\n"
