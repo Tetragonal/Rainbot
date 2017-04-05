@@ -181,22 +181,22 @@ public class MessageProcessor extends Thread{
 			String fileName = s.substring(s.indexOf(" ")+1);
 			
 			MessageAttachment messageAttachment = message.getAttachments().iterator().next();
-			boolean addedFile = fileProcessor.addFile(folderName, fileName, messageAttachment);
+			boolean addedFile = fileProcessor.addFile(channel.getServer(), folderName, fileName, messageAttachment);
 			if(addedFile){
-		    	return "uploaded img \"" + fileProcessor.getFullFilename(folderName, fileName) + "\"";
+		    	return "uploaded img \"" + fileProcessor.getFullFilename(channel.getServer(), folderName, fileName) + "\"";
 			}else{
 				return "Upload failed";
 			}
 		}
 		else if(s.equalsIgnoreCase("imagelist")){
-			return fileProcessor.getFileList();
+			return fileProcessor.getFileList(channel.getServer());
 		}
 		else if(s.startsWith("dir ")){
 			s = s.substring(4);
-			return fileProcessor.getFilesInDirectory(s);
+			return fileProcessor.getFilesInDirectory(channel.getServer(), s);
 		}
 		else if(s.equalsIgnoreCase("randomimage")){
-			File image = fileProcessor.getRandomFile();
+			File image = fileProcessor.getRandomFile(channel.getServer());
 			
 			if(message != null){
 				message.replyFile(image, image.getName());
@@ -208,7 +208,7 @@ public class MessageProcessor extends Thread{
 		else if(s.startsWith("randomimage ")){
 			s = s.substring(12);
 			
-			File image = fileProcessor.getRandomFile(s);
+			File image = fileProcessor.getRandomFile(channel.getServer(), s);
 			
 			if(message != null){
 				message.replyFile(image, image.getName());
@@ -223,7 +223,7 @@ public class MessageProcessor extends Thread{
 			String folderName = s.substring(0, s.indexOf(" "));
 			String fileName = s.substring(s.indexOf(" ")+1);
 
-			File image = fileProcessor.getFile(folderName, fileName);
+			File image = fileProcessor.getFile(channel.getServer(), folderName, fileName);
 			if(message != null){
 				message.replyFile(image, image.getName());
 			}else{
@@ -233,7 +233,7 @@ public class MessageProcessor extends Thread{
 		}
 		else if(s.startsWith("getfolder ")){
 			s = s.substring(10);
-			ArrayList<InputStream> zippedFolderList = fileProcessor.getZippedFolders(s);
+			ArrayList<InputStream> zippedFolderList = fileProcessor.getZippedFolders(channel.getServer(), s);
 			for(int i=0; i<zippedFolderList.size(); i++){
 				if(message != null){
 					message.replyFile(zippedFolderList.get(i), s+"-"+i+".zip");
@@ -254,8 +254,8 @@ public class MessageProcessor extends Thread{
 			
 			String folderName = s.substring(0, s.indexOf(" "));
 			String fileName = s.substring(s.indexOf(" ")+1);
-			String fullFileName = fileProcessor.getFullFilename(folderName, fileName);
-			fileProcessor.removeFile(folderName, fileName);
+			String fullFileName = fileProcessor.getFullFilename(channel.getServer(), folderName, fileName);
+			fileProcessor.removeFile(channel.getServer(), folderName, fileName);
 			return "removed " + folderName + "\\" + fullFileName;
 		}
         else if(s.equalsIgnoreCase("help") || s.equalsIgnoreCase("help2")){

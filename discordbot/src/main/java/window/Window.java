@@ -51,7 +51,7 @@ public class Window extends JFrame {
 	private JPanel contentPane;
 	private JTextField tokenField;
 	private Rainbot rainbot;
-	private static RainbotProperties rainbotProperties;
+	public static RainbotProperties rainbotProperties;
 	
 	private JProgressBar connectedBar;
 	private JLabel lblUser;
@@ -118,8 +118,9 @@ public class Window extends JFrame {
 	public Window(boolean runInDebugMode) {
 		Window.debugMode = runInDebugMode;
 		
-		rainbot = new Rainbot(this);
+		
 		rainbotProperties = new RainbotProperties();
+		rainbot = new Rainbot(this);
 		
 		setTitle("Rainbot Discord client");
 		setResizable(false);
@@ -383,6 +384,12 @@ public class Window extends JFrame {
 		
 		Vector<Component> order = new Vector<Component>(7);
 	    order.add(tokenField);
+	    
+	    JLabel lbl_imgInfo = new JLabel("New label");
+	    lbl_imgInfo.setBounds(807, 198, 204, 69);
+	    contentPane.add(lbl_imgInfo);
+	    lbl_imgInfo.setText("<html><center>Image hosting:</center>Change root directory in config.txt (imgLocation)</html>");
+	    
 	    newPolicy = new WindowTraversalPolicy(order);
 	    setFocusTraversalPolicy(newPolicy);
 		
