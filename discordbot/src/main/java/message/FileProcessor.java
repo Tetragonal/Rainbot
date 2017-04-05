@@ -54,9 +54,8 @@ public class FileProcessor {
 				    extension = messageAttachment.getFileName().substring(i+1);
 				}
 				//create directory
-				new File(imgLocation + server.getId() + "/" + directoryName).mkdir();
+				new File(imgLocation + server.getId() + "/" + directoryName).mkdirs();
 				//write file
-				System.out.println(imgLocation + server.getId() + "/" + directoryName + "/" + fileName + "." + extension);
 				FileOutputStream fos = new FileOutputStream(imgLocation + server.getId() + "/" + directoryName + "/" + fileName + "." + extension);
 				fos.write(response);
 				fos.close();
@@ -176,11 +175,8 @@ public class FileProcessor {
 		for(File directory : directories){
 			String directoryName = directory.getAbsolutePath().substring((imgLocation + server.getId() + "/").length()); //relative path
 			list += directoryName + "\n";
-			System.out.println("d" + directory.getAbsolutePath());
 			File[] imgArray = new File(directory.getAbsolutePath()).listFiles();
 			for(File img : imgArray){
-				System.out.println("a " + (imgLocation + server.getId() + "/" + directoryName + "/"));
-				System.out.println("b " + img.getAbsolutePath());
 				String imgName = img.getAbsolutePath().substring((imgLocation + server.getId() + "/" + directoryName + "/").length());
 				list += "    " + imgName + "\n";
 			}

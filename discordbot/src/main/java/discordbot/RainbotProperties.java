@@ -11,6 +11,7 @@ import window.Window;
 
 public class RainbotProperties {
 	Properties prop = new Properties();
+	
 	public String getProperty(String key){
 		String property = null;
 		InputStream input = null;
