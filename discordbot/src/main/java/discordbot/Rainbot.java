@@ -32,6 +32,8 @@ public class Rainbot {
 	public DeleteListener deleteListener;
 	public MessageProcessor messageProcessor;
 	
+	public String token = null;
+	
 	public boolean isConnected = false;
 	
 	public Rainbot(Window parentWindow){
@@ -45,6 +47,7 @@ public class Rainbot {
 	}
 	
 	public void connect(String token){
+		this.token = token;
 		if(!isConnected){
 			implApi = (ImplDiscordAPI) Javacord.getApi(token, true);
 	        implApi.connect(new FutureCallback<DiscordAPI>() {

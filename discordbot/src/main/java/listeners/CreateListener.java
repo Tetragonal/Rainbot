@@ -63,9 +63,13 @@ public class CreateListener implements MessageCreateListener{
 		    	public void run() {
 		    		for(Server server : rainbot.getImplDiscordAPI().getServers()){
 		    			for(Channel channel : server.getChannels()){
-		    				messageProcessor.queueMessage(channel, "first");
-		    				messageProcessor.queueMessage(channel, messageProcessor.parseCommand("useractivity", channel, parentWindow.getRainbot().getImplDiscordAPI().getYourself(), null));	
-		    			}
+		    				String msg = messageProcessor.parseCommand("useractivity", channel, parentWindow.getRainbot().getImplDiscordAPI().getYourself(), null);
+
+		    				if(!msg.contains("0.00 messages per minute")){ //not dead channel
+		    					messageProcessor.queueMessage(channel, "first");
+		    					messageProcessor.queueMessage(channel, msg);	
+		    				}
+	    				}
 	    			}
 		    		System.out.println("switching to new day");
 		    		dailyLogger.saveMessageList();
@@ -76,9 +80,22 @@ public class CreateListener implements MessageCreateListener{
     	
     	if(saveLogTimer == null){
     		saveLogTimer = new Timer();
-    		//Schedule to save every 30 minutes
+    		//Schedule to save + restart every 30 minutes
     		saveLogTimer.schedule(new TimerTask(){
     			public void run(){
+    				try{
+	    				rainbot.disconnect();			
+    				}catch (Exception e){
+    					System.out.println("Could not disconnect");
+    					//throw e;
+    				}
+    				try{
+        				rainbot.connect(rainbot.token);			
+    				}catch (Exception e){
+    					System.out.println("Could not reconnect");
+    					//throw e;
+    				}
+    				
     				dailyLogger.saveMessageList();
     				System.out.println("automatically saved log");
     			}

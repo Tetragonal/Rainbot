@@ -9,18 +9,22 @@
   <repositories>
    <repository>
      <id>javacord-repo</id>
-  	 <url>http://testrepo.bastian-oppermann.de</url>
+  	 <url>http://repo.bastian-oppermann.de</url>
    </repository>
+   <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
   </repositories>
 
   <dependencies>
    <dependency>
-     <groupId>de.btobastian.javacord</groupId>
-     <artifactId>javacord</artifactId>
-     <version>2.0.10-12</version>
-      <!-- This will use the shaded javacord which contains all required dependencies -->
-     <classifier>shaded</classifier>
-   </dependency>
+  	<groupId>de.btobastian.javacord</groupId>
+  <artifactId>javacord</artifactId>
+  <version>2.0.17</version>
+   <!-- This will use the shaded javacord which contains all required dependencies -->
+  <classifier>shaded</classifier>
+	</dependency>
    
    <!-- A SLF4J compatible logging framework. I would recommend to use logback -->
    <dependency>
@@ -34,6 +38,13 @@
 	    <groupId>org.scilab.forge</groupId>
 	    <artifactId>jlatexmath</artifactId>
 	    <version>1.0.2</version>
+	</dependency>
+	
+	<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+	<dependency>
+	    <groupId>org.apache.httpcomponents</groupId>
+	    <artifactId>httpclient</artifactId>
+	    <version>4.5.3</version>
 	</dependency>
 
 

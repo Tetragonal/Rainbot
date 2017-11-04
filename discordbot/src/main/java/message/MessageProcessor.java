@@ -4,17 +4,21 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
@@ -164,12 +168,15 @@ public class MessageProcessor extends Thread{
 			return diceString;
 		}
 		else if (s.equalsIgnoreCase("ping")) {
+			message.addUnicodeReaction("U+1F3D3");
 			return "pong";
         }
 		else if (s.equalsIgnoreCase("bye")) {
+			message.addUnicodeReaction("U+1F44B");
 			return "bye!!!!";
         }
 		else if (s.equalsIgnoreCase("hi") | s.equalsIgnoreCase("hello")) {
+			message.addUnicodeReaction("U+1F603");
 			return "hi!!!!";
         }
 		else if(s.equalsIgnoreCase("feelsbadman")){
@@ -199,7 +206,7 @@ public class MessageProcessor extends Thread{
 			File image = fileProcessor.getRandomFile(channel.getServer());
 			
 			if(message != null){
-				message.replyFile(image, image.getName());
+				message.getChannelReceiver().sendFile(image, image.getName());
 			}else{
 				channel.sendFile(image, image.getName());
 			}
@@ -211,7 +218,7 @@ public class MessageProcessor extends Thread{
 			File image = fileProcessor.getRandomFile(channel.getServer(), s);
 			
 			if(message != null){
-				message.replyFile(image, image.getName());
+				message.getChannelReceiver().sendFile(image, image.getName());
 			}else{
 				channel.sendFile(image, image.getName());
 			}
@@ -225,7 +232,7 @@ public class MessageProcessor extends Thread{
 
 			File image = fileProcessor.getFile(channel.getServer(), folderName, fileName);
 			if(message != null){
-				message.replyFile(image, image.getName());
+				message.getChannelReceiver().sendFile(image, image.getName());
 			}else{
 				channel.sendFile(image, image.getName());
 			}	
@@ -236,7 +243,7 @@ public class MessageProcessor extends Thread{
 			ArrayList<InputStream> zippedFolderList = fileProcessor.getZippedFolders(channel.getServer(), s);
 			for(int i=0; i<zippedFolderList.size(); i++){
 				if(message != null){
-					message.replyFile(zippedFolderList.get(i), s+"-"+i+".zip");
+					message.getChannelReceiver().sendFile(zippedFolderList.get(i), s+"-"+i+".zip");
 				}else{
 					channel.sendFile(zippedFolderList.get(i), s+"-"+i+".zip");
 				}
@@ -362,7 +369,7 @@ public class MessageProcessor extends Thread{
 
 			if(instanceCount > 0){
 				if(message != null && instanceCount > 0){
-					message.replyFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in today's log");
+					message.getChannelReceiver().sendFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in today's log");
 				}else{
 					channel.sendFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in today's log");
 				}
@@ -387,7 +394,7 @@ public class MessageProcessor extends Thread{
 			int instanceCount = (int) findResults[1];
 			if(instanceCount > 0){
 				if(message != null){
-					message.replyFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log");
+					message.getChannelReceiver().sendFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log");
 				}else{
 					channel.sendFile(findStream, "instances of '" + s + "'.log", "Found " + instanceCount + " instances of '" + s + "' in " + logName + "'s log");
 				}
@@ -405,7 +412,7 @@ public class MessageProcessor extends Thread{
         	int messageCount = (int) logResults[1];
 			if(messageCount > 0){
 				if(message != null){
-					message.replyFile(logStream, "message.log", "Log contains " + messageCount + " messages");
+					message.getChannelReceiver().sendFile(logStream, "message.log", "Log contains " + messageCount + " messages");
 				}else{
 					channel.sendFile(logStream, "message.log", "Log contains " + messageCount + " messages");
 				}
@@ -426,7 +433,7 @@ public class MessageProcessor extends Thread{
         	int messageCount = (int) logResults[1];
 			if(messageCount > 0){
 				if(message != null){
-					message.replyFile(logStream, s + ".log", "Log contains " + messageCount + " messages");
+					message.getChannelReceiver().sendFile(logStream, s + ".log", "Log contains " + messageCount + " messages");
 				}else{
 					channel.sendFile(logStream, s + ".log", "Log contains " + messageCount + " messages");
 				}
@@ -465,7 +472,7 @@ public class MessageProcessor extends Thread{
 	   		InputStream is = new ByteArrayInputStream(os.toByteArray());
 
 			if(message != null){
-				message.replyFile(is, "equation.png", latex);
+				message.getChannelReceiver().sendFile(is, "equation.png", latex);
 			}else{
 				channel.sendFile(is, "equation.png", latex);
 			}
@@ -475,14 +482,148 @@ public class MessageProcessor extends Thread{
         	s = s.substring(s.indexOf(" ") + 1);
         	if(message != null){
         		if(message.getChannelReceiver().getServer() != null){
-	        		String nickname = author.getNick(message.getChannelReceiver().getServer());
+	        		String nickname = author.getNickname(message.getChannelReceiver().getServer());
 	            	message.delete();
 	        		return "`" + nickname + "'s paste`\n" + pasteProcessor.createPaste(language, nickname, s);
         		}else return pasteProcessor.createPaste(language, author.getName(), s);
         	}else{
         		return pasteProcessor.createPaste(language, "paste" , s);
         	}
+    	}else if(s.startsWith("remindme ")){
+    		message.addUnicodeReaction("U+23F0");
+    		s = s.substring(9);
+    		String time = s.substring(0, s.indexOf('\"'));
+    		String[] units = time.split(" "); //will break the string up into an array
+    		int days = 0;
+    		int hours = 0;
+    		int minutes = 0;
+    		int seconds = 0;
+    		for(int i=0; i<units.length; i++){
+    			switch(units[i]){
+					case "day":
+					case "days":
+						days = Integer.parseInt(units[i-1]);
+						break;
+    				case "hour":
+    				case "hours":
+    				case "hr":
+    				case "hrs":
+    					hours = Integer.parseInt(units[i-1]);
+    					break;
+    				case "minute":
+    				case "minutes":
+    				case "mins":
+    				case "min":
+    					minutes = Integer.parseInt(units[i-1]);
+    					break;
+    				case "second":
+    				case "seconds":
+    				case "secs":
+    				case "sec":
+    					seconds = Integer.parseInt(units[i-1]);
+    					break;
+    			}
+    		}
+    		int duration = 24*60*60*days + 60*60*hours + 60*minutes + seconds; //add up our values
+    		if(duration == 0){
+    			duration = 60*60;
+    			minutes = 1;
+    		}
+    		Timer reminderTimer = new Timer();
+    		s = s.substring(s.indexOf('\"')+1);
+    		final String reminder = s.substring(0, s.indexOf('\"'));
+    		//Schedule to save + restart every 30 minutes
+    		reminderTimer.schedule(new TimerTask(){
+    			public void run(){
+    				queueMessage(channel, author.getMentionTag() + " Reminder: `" + reminder + "`");
+    				//author.sendMessage(" Reminder: " + reminder);
+    			}
+    		}, 1000*duration);
+    		author.sendMessage("Reminding you in `" + days + " days, " + hours + " hours, " + minutes + " minutes, and " + seconds + " seconds`");
     	}
+    	else if(s.startsWith("poe ")){
+    		System.out.println("test");
+    		String query = s.substring(4);
+    		String filename = query.replaceAll("\\W+", "");
+    		try {
+    			 ProcessBuilder builder = new ProcessBuilder("phantomjs", "Rainbot poe.js", query , filename);
+    			        builder.redirectErrorStream(true);
+    			        Process p = builder.start();
+    			        BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
+    			        String line;
+    			        while (true) {
+    			            line = r.readLine();
+    			            if (line == null) { break; }
+    			            System.out.println(line);
+    			        }
+				File f = new File(filename + ".png");
+				File f2 = new File(filename +"2.png");
+				File f3 = new File(filename +"3.png");
+				if(f.isFile() || f2.isFile()){
+					System.out.println("exists");
+					if(message != null){
+						message.reply("<http://pathofexile.gamepedia.com/" + query.replace(" ", "_") + ">");
+						message.getChannelReceiver().sendFile(f);
+						message.getChannelReceiver().sendFile(f2);
+						message.getChannelReceiver().sendFile(f3);
+					}else{
+						channel.sendMessage("<http://pathofexile.gamepedia.com/" + query.replace(" ", "_") + ">");
+						channel.sendFile(f);
+						channel.sendFile(f2);
+						channel.sendFile(f3);
+					}
+					Timer deleteTimer = new Timer();
+					deleteTimer.schedule(new TimerTask(){
+		    			public void run(){
+							f.delete();
+							f2.delete();
+							f3.delete();
+		    			}
+		    		}, 10000);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    		return null;
+    		/*
+    		if message.content.startswith('!poe '):
+    	        query = message.content[5:]
+    	        print(query)
+    	        filename = re.sub(r'\W+', '', query)
+    	        os.system('phantomjs "Rainbot poe.js" "' + query + '" ' + filename)
+    	        if(os.path.isfile(filename+'.png') or os.path.isfile(filename+'2.png')):
+    	            yield from client.send_message(message.channel, "<http://pathofexile.gamepedia.com/" + query.replace(" ", "_") + ">")
+    	            try:
+    	                yield from client.send_file(message.channel, filename+'.png')
+    	            except:
+    	                pass
+    	            try:
+    	                yield from client.send_file(message.channel, filename+'2.png')
+    	            except:
+    	                pass
+    	            try:
+    	                yield from client.send_file(message.channel, filename+'3.png')
+    	            except:
+    	                pass
+    	            yield from asyncio.sleep(10)
+    	            try:
+    	                os.remove(filename+'.png')
+    	            except:
+    	                pass
+    	            try:
+    	                os.remove(filename+'2.png')
+    	            except:
+    	                pass
+    	            try:
+    	                os.remove(filename+'3.png')
+    	            except:
+    	                pass
+    	        else:
+    	            yield from client.send_message(message.channel, "Error, make sure your query is spelled correctly (case-sensitive)")      
+    	            */
+    	}
+		
+		
 		
 		//parse if js if not a command
         else if(jsEnabled){
@@ -503,10 +644,14 @@ public class MessageProcessor extends Thread{
 	
 	public void receiveMessage(Message message){
 		if(!message.getAuthor().isBot() && isActive){
-    		if(!(requireMention) || message.getMentions().contains(rainbot.getImplDiscordAPI().getYourself()) && message.getMentions().size() == 1){
+    		if(!(requireMention) || message.getMentions().contains(rainbot.getImplDiscordAPI().getYourself())){ // && message.getMentions().size() == 1
     			String command = "";
     			if(message.getMentions().contains(rainbot.getImplDiscordAPI().getYourself())){
-        			command = message.getContent().substring(message.getContent().indexOf(">")+2);
+    				String mentionTag = rainbot.getImplDiscordAPI().getYourself().getMentionTag();
+    				if(!message.getContent().contains(mentionTag)){
+    					mentionTag = mentionTag.substring(0, 2) + "!" + mentionTag.substring(2);
+    				}
+    				command = message.getContent().substring(message.getContent().indexOf(mentionTag) + mentionTag.length()+1);
     			}else{
     				command = message.getContent();
     			}	
