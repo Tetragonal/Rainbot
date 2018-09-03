@@ -62,6 +62,7 @@ public class Window extends JFrame {
 	private JCheckBox messageProcessorCheckBox;
 	private JCheckBox editListenerCheckBox;
 	private JCheckBox deleteListenerCheckBox;
+	private JCheckBox logCheckBox;
 	private JCheckBox requireMentionCheckBox;
 	private JCheckBox jsCheckBox;
 	private JTextArea consoleTextArea;
@@ -77,7 +78,7 @@ public class Window extends JFrame {
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -217,6 +218,20 @@ public class Window extends JFrame {
 		    }
 		});
 		contentPane.add(editListenerCheckBox);
+		
+	    logCheckBox = new JCheckBox("Log messages");
+	    logCheckBox.setBounds(817, 194, 181, 23);
+	    logCheckBox.addItemListener(new ItemListener() {
+		    public void itemStateChanged(ItemEvent e) {
+		        if(e.getStateChange() == ItemEvent.SELECTED) {//checkbox has been selected
+		            rainbot.createListener.isLogging = true;
+		        } else {//checkbox has been deselected
+		            rainbot.editListener.isActive = false;
+		        };
+		    }
+		});
+	    contentPane.add(logCheckBox);
+		
 		
 		connectedBar = new JProgressBar();
 		connectedBar.setBounds(85, 619, 100, 14);
@@ -386,7 +401,7 @@ public class Window extends JFrame {
 	    order.add(tokenField);
 	    
 	    JLabel lbl_imgInfo = new JLabel("New label");
-	    lbl_imgInfo.setBounds(807, 198, 204, 69);
+	    lbl_imgInfo.setBounds(807, 221, 204, 69);
 	    contentPane.add(lbl_imgInfo);
 	    lbl_imgInfo.setText("<html><center>Image hosting:</center>Change root directory in config.txt (imgLocation)</html>");
 	    
@@ -484,7 +499,7 @@ public class Window extends JFrame {
 		requireMentionCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Require mention")));
 		editListenerCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Notify on edit")));
 		deleteListenerCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Notify on delete")));
-		
+		logCheckBox.setSelected(Boolean.valueOf(rainbotProperties.getProperty("Notify on delete")));
 		
 		
 		checkBoxSaveProperties.setSelected(Boolean.valueOf(rainbotProperties.getProperty("saveProperties")));
@@ -500,6 +515,7 @@ public class Window extends JFrame {
 		rainbotProperties.setProperty("Require mention", Boolean.toString(requireMentionCheckBox.isSelected()));
 		rainbotProperties.setProperty("Notify on edit", Boolean.toString(editListenerCheckBox.isSelected()));
 		rainbotProperties.setProperty("Notify on delete", Boolean.toString(deleteListenerCheckBox.isSelected()));
+		rainbotProperties.setProperty("Log messages", Boolean.toString(deleteListenerCheckBox.isSelected()));
 	}
 	
 	public void clearProperties(){
@@ -512,6 +528,7 @@ public class Window extends JFrame {
 		rainbotProperties.clearProperty("Require mention");
 		rainbotProperties.clearProperty("Notify on edit");
 		rainbotProperties.clearProperty("Notify on delete");
+		rainbotProperties.clearProperty("Log messages");
 	}
 	
 	public void addToConsoleLog(String text){
@@ -538,7 +555,7 @@ public class Window extends JFrame {
 	public void sendMessage(){
     	if(getCurrentChannel() != null && sendTextArea.getText() != ""){
     		if(sendAsCommandCheckBox.isSelected()){
-    			String result = rainbot.messageProcessor.parseCommand(sendTextArea.getText(), getCurrentChannel(), rainbot.getImplDiscordAPI().getYourself(), null);
+    			Object result = rainbot.messageProcessor.parseCommand(sendTextArea.getText(), getCurrentChannel(), rainbot.getImplDiscordAPI().getYourself(), null);
     			if(result != null){
     				rainbot.messageProcessor.queueMessage(getCurrentChannel(), "`" + sendTextArea.getText() + "`\n\n" + result);
     			}

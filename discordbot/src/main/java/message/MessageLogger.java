@@ -32,7 +32,7 @@ import de.btobastian.javacord.entities.message.Message;
 import discordbot.Rainbot;
 import window.Window;
 
-public class DailyLogger {
+public class MessageLogger {
 	public ArrayList<MessageData> messageList = new ArrayList<MessageData>();
 	
 	public Date currentDate;
@@ -44,7 +44,7 @@ public class DailyLogger {
 	
 	private Rainbot rainbot;
 	
-	public DailyLogger(Rainbot rainbot){
+	public MessageLogger(Rainbot rainbot){
 		this.rainbot = rainbot;
 		Calendar calendar = Calendar.getInstance();
 		currentDate = calendar.getTime();
@@ -52,7 +52,7 @@ public class DailyLogger {
 		loadMessageList();
 	}
 	
-	public DailyLogger(Rainbot rainbot, String logName){
+	public MessageLogger(Rainbot rainbot, String logName){
 		this.rainbot = rainbot;
 		Calendar calendar = Calendar.getInstance();
 		sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -94,7 +94,10 @@ public class DailyLogger {
 		      messageList = (ArrayList<MessageData>)objectInputStream.readObject();
 		      objectInputStream.close();
 		      inputFileStream.close();
-		  } 
+		  }
+		  catch(FileNotFoundException e){
+			  System.out.println("No log file " + Window.getJarLocation() + "/logs/" + sdf.format(currentDate) + ".log" );
+		  }
 		  catch (Exception e)
 		  {
 			  e.printStackTrace(); 

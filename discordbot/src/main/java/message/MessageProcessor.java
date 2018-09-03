@@ -22,23 +22,25 @@ import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import javax.swing.JLabel;
 
 import org.scilab.forge.jlatexmath.TeXConstants;
 import org.scilab.forge.jlatexmath.TeXFormula;
 import org.scilab.forge.jlatexmath.TeXIcon;
 
+import com.vdurmont.emoji.EmojiParser;
+
 import de.btobastian.javacord.entities.Channel;
 import de.btobastian.javacord.entities.User;
 import de.btobastian.javacord.entities.message.Message;
 import de.btobastian.javacord.entities.message.MessageAttachment;
 import discordbot.Rainbot;
+import jdk.nashorn.api.scripting.ClassFilter;
+import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
 public class MessageProcessor extends Thread{
-	List<Channel> channelList = new ArrayList<Channel>();
-	List<String>  messageList = new ArrayList<String>();
+	List<Object> recipientList = new ArrayList<Object>();
+	List<Object>  messageList = new ArrayList<Object>();
 	
 	public boolean isActive = false;
 	public boolean jsEnabled = false;
@@ -47,22 +49,24 @@ public class MessageProcessor extends Thread{
 	private Rainbot rainbot;
 	private FileProcessor fileProcessor;
 	private PasteProcessor pasteProcessor;
-	private ScriptEngineManager factory;
+	private ScriptEngine engine;
 	
 	public MessageProcessor(Rainbot rainbot){
 		 this.rainbot = rainbot;
 		 fileProcessor = new FileProcessor();
 		 pasteProcessor = new PasteProcessor();
-		 factory = new ScriptEngineManager();
 		 
-		 //for some reason trying to create a ScriptEngine in Scriptrunner.java causes NoClassDefFoundError, doing this somehow prevents it from happening
-	        // create a JavaScript engine
-	        ScriptEngine engine = factory.getEngineByName("JavaScript");
-	        	try {
-					engine.eval("2");
-				} catch (ScriptException e) {
-					e.printStackTrace();
-				}
+		 NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+		 // create a JavaScript engine
+		engine = factory.getScriptEngine(new ClassFilter() {
+			// this one simply forbids use of any java classes, including
+			// reflection
+			@Override
+			public boolean exposeToScripts(String string) {
+				return false;
+			}
+		});
+		
 
 	}
 	
@@ -72,11 +76,22 @@ public class MessageProcessor extends Thread{
 	
 	public void sendMessages(){		
 		while(true){
-			if(channelList.size() > 0 && messageList.size() > 0){
-				Channel c = channelList.get(0);
-				String s = messageList.get(0);
-				c.sendMessage(s);
-				channelList.remove(0);
+			if(recipientList.size() > 0 && messageList.size() > 0){
+				Object recipient = recipientList.get(0);
+				Object message = messageList.get(0);
+				if(message instanceof String){
+					if(recipient instanceof Channel){
+						((Channel)recipient).sendMessage((String) message);
+					}
+					else if(recipient instanceof User){
+						((User)recipient).sendMessage((String) message);
+					}
+				}
+				else if(message instanceof QueuedReaction){
+					((QueuedReaction) message).execute();
+
+				}
+				recipientList.remove(0);
 				messageList.remove(0);
 			}
 			try {
@@ -87,8 +102,8 @@ public class MessageProcessor extends Thread{
 		}
 	}
 	
-	public void queueMessage(Channel channel, String message){
-		channelList.add(channel);
+	public void queueMessage(Object recipient, Object message){
+		recipientList.add(recipient);
 		messageList.add(message);
 	}
 	
@@ -126,9 +141,45 @@ public class MessageProcessor extends Thread{
 		}
 		else if(s.startsWith("rate ")){
 			s = s.substring(5);
-			return "I rate " + s + " " + ((int)(Math.random()*10) + 1) + "/10";
+			int result = ((int)(Math.random()*10) + 1);
+			//lol
+			switch(result){
+				case 1:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":one:")));
+					break;
+				case 2:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":two:")));
+					break;
+				case 3:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":three:")));
+					break;
+				case 4:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":four:")));
+					break;
+				case 5:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":five:")));
+					break;
+				case 6:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":six:")));
+					break;
+				case 7:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":seven:")));
+					break;
+				case 8:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":eight:")));
+					break;
+				case 9:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":nine:")));
+					break;
+				case 10:
+					queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode(":keycap_ten:")));
+					break;
+			}
+			
+			return "I rate " + s + " " + result + "/10";
 		}
 		else if(s.startsWith("spam ")){
+			queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode("😠")));
 			s = s.substring(5);
 			String[] sArray = s.split(" ");
 			String spam = "";
@@ -168,15 +219,15 @@ public class MessageProcessor extends Thread{
 			return diceString;
 		}
 		else if (s.equalsIgnoreCase("ping")) {
-			message.addUnicodeReaction("U+1F3D3");
+			queueMessage(null, new QueuedReaction(message, "🏓"));
 			return "pong";
         }
 		else if (s.equalsIgnoreCase("bye")) {
-			message.addUnicodeReaction("U+1F44B");
+			queueMessage(null, new QueuedReaction(message, "👋"));
 			return "bye!!!!";
         }
 		else if (s.equalsIgnoreCase("hi") | s.equalsIgnoreCase("hello")) {
-			message.addUnicodeReaction("U+1F603");
+			queueMessage(null, new QueuedReaction(message, "😃"));
 			return "hi!!!!";
         }
 		else if(s.equalsIgnoreCase("feelsbadman")){
@@ -250,7 +301,6 @@ public class MessageProcessor extends Thread{
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -285,6 +335,7 @@ public class MessageProcessor extends Thread{
         			+ "    latex [equation]\n"
         			+ "    paste[language] [content] (e.g. 'pastejava')\n"
         			+ "    say [text]\n\n"
+        			+ "    remindme [time] \"[text]\" (e.g. 'remindme 1 minute \"sleep\")'\n"
         			+ "Logging:\n"
         			+ "    log\n"
         			+ "    logdate [yyyy-mm-dd]\n"
@@ -318,15 +369,15 @@ public class MessageProcessor extends Thread{
         	return null;
         }
         else if(s.equalsIgnoreCase("status")){
-        	int time = (int) ManagementFactory.getRuntimeMXBean().getUptime();
+        	long time = (long) ManagementFactory.getRuntimeMXBean().getUptime();
         	time /= 1000;
-        	int seconds = (int) (time % 60);
+        	long seconds = time % 60;
         	time /= 60;
-        	int minutes = time % 60;
+        	long minutes = time % 60;
         	time /= 60;
-        	int hours = time % 24;
+        	long hours = time % 24;
         	time /= 24;
-        	int days = time;
+        	long days = time;
         	String uptimeString = "";
         	if(days > 0){
         		uptimeString = days + " days, ";
@@ -347,7 +398,8 @@ public class MessageProcessor extends Thread{
         			+ "    Enable javascript parser: `" + jsEnabled + "`\n"
         			+ "    Require mention: `" + requireMention + "`\n"
         			+ "Notify on edit: `" + rainbot.editListener.isActive + "`\n"
-        			+ "Notify on delete: `" + rainbot.deleteListener.isActive + "`\n");
+        			+ "Notify on delete: `" + rainbot.deleteListener.isActive + "`\n"
+        			+ "Log messages: `" + rainbot.createListener.isLogging + "`\n");
         	if(message != null){
         		message.delete();
         	}
@@ -363,7 +415,7 @@ public class MessageProcessor extends Thread{
         else if(s.length() >= 5+3 && s.substring(0,5).equals("find ")){
 			s = s.substring(5);
 			
-			Object[] findResults = rainbot.createListener.dailyLogger.find(channel, s);
+			Object[] findResults = rainbot.createListener.messageLogger.find(channel, s);
 			InputStream findStream = (InputStream) findResults[0];
 			int instanceCount = (int) findResults[1];
 
@@ -387,9 +439,9 @@ public class MessageProcessor extends Thread{
 			String logName = s.substring(0, s.indexOf(" "));
 			s = s.substring(s.indexOf(" ")+1);
 			
-			DailyLogger dailyLogger = getDailyLogger(logName);
+			MessageLogger messageLogger = getDailyLogger(logName);
 			
-			Object[] findResults = dailyLogger.find(channel, s);
+			Object[] findResults = messageLogger.find(channel, s);
 			InputStream findStream = (InputStream) findResults[0];
 			int instanceCount = (int) findResults[1];
 			if(instanceCount > 0){
@@ -407,7 +459,7 @@ public class MessageProcessor extends Thread{
 			return null;
 		}
         else if(s.equalsIgnoreCase("log")){
-        	Object[] logResults = rainbot.createListener.dailyLogger.getLog(channel);
+        	Object[] logResults = rainbot.createListener.messageLogger.getLog(channel);
         	InputStream logStream = (InputStream) logResults[0];
         	int messageCount = (int) logResults[1];
 			if(messageCount > 0){
@@ -427,8 +479,8 @@ public class MessageProcessor extends Thread{
 		
         else if(s.startsWith("logdate ")){
 			s = s.substring(8);
-        	DailyLogger dailyLogger = getDailyLogger(s);
-        	Object[] logResults = dailyLogger.getLog(channel);
+        	MessageLogger messageLogger = getDailyLogger(s);
+        	Object[] logResults = messageLogger.getLog(channel);
         	InputStream logStream = (InputStream) logResults[0];
         	int messageCount = (int) logResults[1];
 			if(messageCount > 0){
@@ -446,10 +498,10 @@ public class MessageProcessor extends Thread{
         	return null;
         }
         else if(s.equalsIgnoreCase("useractivity")){
-        	return rainbot.createListener.dailyLogger.getMessageCount(channel);
+        	return rainbot.createListener.messageLogger.getMessageCount(channel);
         }
         else if(s.equalsIgnoreCase("useractivity2")){
-        	return rainbot.createListener.dailyLogger.getLetterCount(channel);
+        	return rainbot.createListener.messageLogger.getLetterCount(channel);
         }
         else if(s.startsWith("latex ")){
         	String latex = s.substring(6);
@@ -490,14 +542,14 @@ public class MessageProcessor extends Thread{
         		return pasteProcessor.createPaste(language, "paste" , s);
         	}
     	}else if(s.startsWith("remindme ")){
-    		message.addUnicodeReaction("U+23F0");
     		s = s.substring(9);
-    		String time = s.substring(0, s.indexOf('\"'));
+    		String time = s.substring(0, s.indexOf('\"')); //throws exception if no "
     		String[] units = time.split(" "); //will break the string up into an array
     		int days = 0;
     		int hours = 0;
     		int minutes = 0;
     		int seconds = 0;
+    		queueMessage(null, new QueuedReaction(message, EmojiParser.parseToUnicode("⏰")));
     		for(int i=0; i<units.length; i++){
     			switch(units[i]){
 					case "day":
@@ -632,14 +684,14 @@ public class MessageProcessor extends Thread{
 		return null;
 	}
 	
-	public DailyLogger getDailyLogger(String logName){
+	public MessageLogger getDailyLogger(String logName){
 		Calendar calendar = Calendar.getInstance();
 		Date currentTime = calendar.getTime();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 		if(sdf.format(currentTime).equals(logName)){
-			return rainbot.createListener.dailyLogger;
+			return rainbot.createListener.messageLogger;
 		}
-		else return new DailyLogger(rainbot, logName); //makes new logger if loading old stuff
+		else return new MessageLogger(rainbot, logName); //makes new logger if loading old stuff
 	}
 	
 	public void receiveMessage(Message message){
@@ -655,7 +707,7 @@ public class MessageProcessor extends Thread{
     			}else{
     				command = message.getContent();
     			}	
-    			String result = parseCommand(command, message.getChannelReceiver(), message.getAuthor(), message);
+    			Object result = parseCommand(command, message.getChannelReceiver(), message.getAuthor(), message);
     			if(result != null){
     				queueMessage(message.getChannelReceiver(), result);
     			}
@@ -666,7 +718,7 @@ public class MessageProcessor extends Thread{
 	public String parseAsJs(String command){
 		
 		String result = "";
-		ScriptRunner scriptRunner = new ScriptRunner(command, factory);
+		ScriptRunner scriptRunner = new ScriptRunner(command, engine);
         try {
             Thread t = new Thread(scriptRunner);
             t.start();
