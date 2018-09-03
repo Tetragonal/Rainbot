@@ -17,17 +17,14 @@
 			<url>https://jitpack.io</url>
 		</repository>
 	</repositories>
-
+	
 	<dependencies>
 		<dependency>
-<<<<<<< HEAD
 		    <groupId>org.javadelight</groupId>
 		    <artifactId>delight-nashorn-sandbox</artifactId>
 		    <version>0.1.16</version>
 		</dependency>
 		<dependency>
-=======
->>>>>>> refs/remotes/origin/master
 			<groupId>com.vdurmont</groupId>
 			<artifactId>emoji-java</artifactId>
 			<version>4.0.0</version>
