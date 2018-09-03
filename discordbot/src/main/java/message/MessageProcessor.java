@@ -22,11 +22,7 @@ import java.util.TimerTask;
 import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
-<<<<<<< HEAD
 import javax.script.ScriptException;
-=======
-import javax.script.ScriptEngine;
->>>>>>> refs/remotes/origin/master
 import javax.swing.JLabel;
 
 import org.scilab.forge.jlatexmath.TeXConstants;
@@ -43,8 +39,6 @@ import delight.nashornsandbox.NashornSandbox;
 import delight.nashornsandbox.NashornSandboxes;
 import delight.nashornsandbox.exceptions.ScriptCPUAbuseException;
 import discordbot.Rainbot;
-import jdk.nashorn.api.scripting.ClassFilter;
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
 public class MessageProcessor extends Thread{
 	List<Object> recipientList = new ArrayList<Object>();
@@ -57,31 +51,11 @@ public class MessageProcessor extends Thread{
 	private Rainbot rainbot;
 	private FileProcessor fileProcessor;
 	private PasteProcessor pasteProcessor;
-<<<<<<< HEAD
-=======
-	private ScriptEngine engine;
->>>>>>> refs/remotes/origin/master
-	
+
 	public MessageProcessor(Rainbot rainbot){
 		 this.rainbot = rainbot;
 		 fileProcessor = new FileProcessor();
 		 pasteProcessor = new PasteProcessor();
-<<<<<<< HEAD
-=======
-		 
-		 NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-		 // create a JavaScript engine
-		engine = factory.getScriptEngine(new ClassFilter() {
-			// this one simply forbids use of any java classes, including
-			// reflection
-			@Override
-			public boolean exposeToScripts(String string) {
-				return false;
-			}
-		});
-		
-
->>>>>>> refs/remotes/origin/master
 	}
 	
 	public void run() {
@@ -729,7 +703,6 @@ public class MessageProcessor extends Thread{
 		}
 	}
 	
-<<<<<<< HEAD
 	public String parseAsJs(String command) {
 		NashornSandbox sandbox = NashornSandboxes.create();
 		sandbox.setMaxCPUTime(2000); // 2 seconds
@@ -741,23 +714,5 @@ public class MessageProcessor extends Thread{
 			System.out.println("Invalid js");
 			return null;
 		}
-=======
-	public String parseAsJs(String command){
-		
-		String result = "";
-		ScriptRunner scriptRunner = new ScriptRunner(command, engine);
-        try {
-            Thread t = new Thread(scriptRunner);
-            t.start();
-            Thread.sleep(200);
-            t.interrupt();
-            Thread.sleep(200);
-            result = scriptRunner.getResult();
-            t.stop();
-        } catch(InterruptedException ie) {
-            throw new RuntimeException(ie);
-        }
-        return result;
->>>>>>> refs/remotes/origin/master
 	}
 }
