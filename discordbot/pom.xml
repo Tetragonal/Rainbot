@@ -1,52 +1,73 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>bot</groupId>
-  <artifactId>discordbot</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>Rainbot</name>
-  <description>Discord text bot using Java + Javacord</description>
-  
-  <repositories>
-   <repository>
-     <id>javacord-repo</id>
-  	 <url>http://repo.bastian-oppermann.de</url>
-   </repository>
-   <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-  </repositories>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>bot</groupId>
+	<artifactId>discordbot</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>Rainbot</name>
+	<description>Discord text bot using Java + Javacord</description>
 
-  <dependencies>
-   <dependency>
-  	<groupId>de.btobastian.javacord</groupId>
-  <artifactId>javacord</artifactId>
-  <version>2.0.17</version>
-   <!-- This will use the shaded javacord which contains all required dependencies -->
-  <classifier>shaded</classifier>
-	</dependency>
-   
-   <!-- A SLF4J compatible logging framework. I would recommend to use logback -->
-   <dependency>
-    <groupId>ch.qos.logback</groupId>
-    <artifactId>logback-classic</artifactId>
-    <version>1.0.13</version>
-   </dependency>
+	<repositories>
+		<repository>
+			<id>javacord-repo</id>
+			<url>http://repo.bastian-oppermann.de</url>
+		</repository>
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+	</repositories>
 
-	<!-- https://mvnrepository.com/artifact/org.scilab.forge/jlatexmath -->
-	<dependency>
-	    <groupId>org.scilab.forge</groupId>
-	    <artifactId>jlatexmath</artifactId>
-	    <version>1.0.2</version>
-	</dependency>
-	
-	<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
-	<dependency>
-	    <groupId>org.apache.httpcomponents</groupId>
-	    <artifactId>httpclient</artifactId>
-	    <version>4.5.3</version>
-	</dependency>
+	<dependencies>
+		<dependency>
+<<<<<<< HEAD
+		    <groupId>org.javadelight</groupId>
+		    <artifactId>delight-nashorn-sandbox</artifactId>
+		    <version>0.1.16</version>
+		</dependency>
+		<dependency>
+=======
+>>>>>>> refs/remotes/origin/master
+			<groupId>com.vdurmont</groupId>
+			<artifactId>emoji-java</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>de.btobastian.javacord</groupId>
+			<artifactId>javacord</artifactId>
+			<version>2.0.17</version>
+			<!-- This will use the shaded javacord which contains all required dependencies -->
+			<classifier>shaded</classifier>
+		</dependency>
+
+		<!-- A SLF4J compatible logging framework. I would recommend to use logback -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.0.13</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.scilab.forge/jlatexmath -->
+		<dependency>
+			<groupId>org.scilab.forge</groupId>
+			<artifactId>jlatexmath</artifactId>
+			<version>1.0.2</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.3</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/io.github.michaldo/nashorn-maven-plugin -->
+		<dependency>
+		    <groupId>io.github.michaldo</groupId>
+		    <artifactId>nashorn-maven-plugin</artifactId>
+		    <version>0.0.1</version>
+		</dependency>
 
 
-  </dependencies>  
+	</dependencies>
 </project>

@@ -18,7 +18,7 @@ import de.btobastian.javacord.entities.message.MessageHistory;
 import listeners.CreateListener;
 import listeners.DeleteListener;
 import listeners.EditListener;
-import message.DailyLogger;
+import message.MessageLogger;
 import message.MessageProcessor;
 import window.Window;
 
@@ -35,6 +35,7 @@ public class Rainbot {
 	public String token = null;
 	
 	public boolean isConnected = false;
+	public boolean connecting = false; //temp add to stop reconnect spam
 	
 	public Rainbot(Window parentWindow){
 		this.parentWindow = parentWindow;
@@ -48,7 +49,8 @@ public class Rainbot {
 	
 	public void connect(String token){
 		this.token = token;
-		if(!isConnected){
+		if(!isConnected && connecting == false){
+			connecting = true;
 			implApi = (ImplDiscordAPI) Javacord.getApi(token, true);
 	        implApi.connect(new FutureCallback<DiscordAPI>() {
 	            public void onSuccess(DiscordAPI api) {
@@ -74,6 +76,7 @@ public class Rainbot {
 	                t.printStackTrace();
 	            }
 	        });
+	        connecting = false;
 		}else{
 			parentWindow.addToConsoleLog("Didn't do anything, already connected.");
 		}
@@ -92,9 +95,12 @@ public class Rainbot {
         	isConnected = false;
 			implApi.setGame(null);
 			implApi.getSocketAdapter().getWebSocket().disconnect(1000);
+			implApi.getSocketAdapter().disconnect();
+			implApi.disconnect();
 			parentWindow.setProgressBar(0);
         	parentWindow.setLblUser("Not logged in");
         	implApi = null;
+        	
         	parentWindow.updateServerComboBox();
         	parentWindow.addToConsoleLog("Disconnected from account.");
 		}else{
@@ -105,13 +111,13 @@ public class Rainbot {
 	public void loadOfflineMessages(){
 		System.out.println("loading offline messages");
 		
-		DailyLogger dailyLogger = createListener.dailyLogger;
+		MessageLogger messageLogger = createListener.messageLogger;
 		
-		if(dailyLogger.messageList.size() == 0){
+		if(messageLogger.messageList.size() == 0){
 			Calendar calendar = Calendar.getInstance();
 			calendar.add(Calendar.DAY_OF_MONTH, -1);
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-			dailyLogger = new DailyLogger(this, sdf.format(calendar.getTime()));
+			messageLogger = new MessageLogger(this, sdf.format(calendar.getTime()));
 		}
 		
 		ArrayList<Future<MessageHistory>> futureMessageHistoryList = new ArrayList<Future<MessageHistory>>();
@@ -120,16 +126,16 @@ public class Rainbot {
 		
 		//create list
 		for(Channel c : implApi.getChannels()){
-			for (int i=dailyLogger.messageList.size()-1; i >= 0 ; i--){
-				if(dailyLogger.messageList.get(i).channelReceiverID.equals(c.getId())){
-					Future<MessageHistory> futureMessageHistory = c.getMessageHistoryAfter(dailyLogger.messageList.get(i).messageID, 9999);
+			for (int i=messageLogger.messageList.size()-1; i >= 0 ; i--){
+				if(messageLogger.messageList.get(i).channelReceiverID.equals(c.getId())){
+					Future<MessageHistory> futureMessageHistory = c.getMessageHistoryAfter(messageLogger.messageList.get(i).messageID, 9999);
 					futureMessageHistoryList.add(futureMessageHistory);
-					i = -1; //stop loop
+					break;
 				}
 			}
 		}
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-		String formattedDate = sdf.format(dailyLogger.currentDate);
+		String formattedDate = sdf.format(messageLogger.currentDate);
 		//process list
 		for(Future<MessageHistory> futureMessageHistory : futureMessageHistoryList){
 			
@@ -146,19 +152,19 @@ public class Rainbot {
 					
 					if(sdf.format(messageDate.getTime()).equals(formattedDate)){
 						System.out.println("loaded offline message  " + m.getContent());
-						dailyLogger.addMessage(m);
+						messageLogger.addMessage(m);
 					}
 					else{
-						dailyLogger.saveMessageList();
+						messageLogger.saveMessageList();
 
-						dailyLogger = new DailyLogger(this,sdf.format(messageDate.getTime()));
-						formattedDate = sdf.format(dailyLogger.currentDate);
+						messageLogger = new MessageLogger(this,sdf.format(messageDate.getTime()));
+						formattedDate = sdf.format(messageLogger.currentDate);
 						System.out.println(sdf.format(messageDate.getTime())+ " " + formattedDate + " " + "new day, loaded offline message  " + m.getContent());
-						dailyLogger.addMessage(m);
+						messageLogger.addMessage(m);
 					}
 				}
-				dailyLogger.saveMessageList();
-				createListener.dailyLogger.loadMessageList();
+				messageLogger.saveMessageList();
+				createListener.messageLogger.loadMessageList();
 			} catch (InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 			}	

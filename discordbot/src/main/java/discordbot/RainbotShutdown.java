@@ -9,7 +9,7 @@ public class RainbotShutdown extends Thread{
 	
 	public void run() {
 		rainbot.disconnect();
-		rainbot.createListener.dailyLogger.saveMessageList();
+		rainbot.createListener.messageLogger.saveMessageList();
     		try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
