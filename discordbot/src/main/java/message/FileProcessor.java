@@ -31,8 +31,10 @@ public class FileProcessor {
 	}
 
 	public boolean addFile(Server server, String directoryName, String fileName, MessageAttachment messageAttachment){ //inputstream
+		directoryName = sanitize(directoryName);
+		fileName = sanitize(fileName);
+		
 		if(getFullFilename(server, directoryName, fileName) == null){
-			directoryName = checkDirectory(directoryName);
 			InputStream in;
 			try {
 				//transfer file
@@ -74,7 +76,9 @@ public class FileProcessor {
 	}
 	
 	public void removeFile(Server server, String directoryName, String fileName){
-		directoryName = checkDirectory(directoryName);
+		directoryName = sanitize(directoryName);
+		fileName = sanitize(fileName);
+		
 		fileName = getFullFilename(server, directoryName, fileName);
 		//create directory
 		File fileToDelete = new File(imgLocation + server.getId() + "/" + directoryName + "/" + fileName);
@@ -102,7 +106,7 @@ public class FileProcessor {
 	}
 	
 	public File getRandomFile(Server server, String directoryName){
-		directoryName = checkDirectory(directoryName);
+		directoryName = sanitize(directoryName);
 		
 		//make list of all file locations in directory
 		File directory = new File(imgLocation + server.getId() + "/" + directoryName);
@@ -113,28 +117,45 @@ public class FileProcessor {
 	}
 	
 	public File getFile(Server server, String directoryName, String fileName){
-		directoryName = checkDirectory(directoryName);
+		directoryName = sanitize(directoryName);
+		fileName = sanitize(fileName);
+		
 		fileName = getFullFilename(server, directoryName, fileName);
-		directoryName = checkDirectory(directoryName);
+		directoryName = sanitize(directoryName);
 		File requestedFile = new File(imgLocation + server.getId() + "/" + directoryName + "/" + fileName);
 		return requestedFile;	
 	}
 	
 	public String getFilesInDirectory(Server server, String directoryName){
-		directoryName = checkDirectory(directoryName);
-		String list = directoryName + "\n";
+		directoryName = sanitize(directoryName);
+		
+		String list = null;
+		if(directoryName.equals("")) {
+			list = server.getName() + "\n";
+		}else {
+			list = directoryName + "\n";
+		}
+		
+		
 		File directory = new File(imgLocation + server.getId() + "/" + directoryName);
-		directory.mkdirs();
+
+		// Default to reg directory
+		if(!directory.exists()) {
+			directory = new File(imgLocation + server.getId() + "/");
+			list = server.getName() + "\n";
+		}
+		
 		File[] imgArray = new File(directory.getAbsolutePath()).listFiles();
 		for(File img : imgArray){
-			String imgName = img.getAbsolutePath().substring((imgLocation + server.getId() + "/" + directoryName + "/").length());
+			String imgName = img.getName();
 			list += "    " + imgName + "\n";
 		}
 		return list;
 	}
 	
 	public ArrayList<InputStream> getZippedFolders(Server server, String directoryName){
-		directoryName = checkDirectory(directoryName);
+		directoryName = sanitize(directoryName);
+		
 		ArrayList<InputStream> zippedFolderList = new ArrayList<InputStream>();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try{
@@ -184,8 +205,8 @@ public class FileProcessor {
 		return list;
 	}
 	
-	public String checkDirectory(String directoryName){
-		return directoryName.replace("../", "").replace("/", "").replace("\\", "");
+	public String sanitize(String name){
+		return name.replaceAll("[^A-Za-z0-9]", "");
 	}
 	
 	public String getFullFilename(Server server, String directoryName, String fileName){
